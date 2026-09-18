@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سجلّ المقاييس الإكلينيكية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f6f4ee;
+    --paper-2:#efece2;
+    --ink:#20241f;
+    --ink-soft:#565a4f;
+    --line:#c9c4b2;
+    --line-soft:#dedad0;
+    --clinic-green:#2f5233;
+    --clinic-green-deep:#1e3a22;
+    --amber:#a6702a;
+    --red:#9c3b2e;
+    --card:#fffdf8;
+    --focus:#2f5233;
+  }
+  [data-theme="dark"]{
+    --paper:#171a15;
+    --paper-2:#1f231b;
+    --ink:#eae7db;
+    --ink-soft:#a9a696;
+    --line:#3a3f32;
+    --line-soft:#2b2f24;
+    --clinic-green:#7fae7a;
+    --clinic-green-deep:#9cc797;
+    --amber:#d19a52;
+    --red:#d17c6a;
+    --card:#1c1f18;
+    --focus:#7fae7a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#171a15; --paper-2:#1f231b; --ink:#eae7db; --ink-soft:#a9a696;
+      --line:#3a3f32; --line-soft:#2b2f24; --clinic-green:#7fae7a; --clinic-green-deep:#9cc797;
+      --amber:#d19a52; --red:#d17c6a; --card:#1c1f18; --focus:#7fae7a;
+    }
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans Arabic', system-ui, sans-serif;
+    min-height:100vh;
+    line-height:1.5;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace; direction:ltr; display:inline-block;}
+
+  /* ===== App shell ===== */
+  .app{max-width:960px;margin:0 auto;padding:28px 20px 80px;}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:28px;
+    padding-bottom:16px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{
+    width:38px;height:38px;border-radius:8px;
+    background:var(--clinic-green);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--paper);
+    font-weight:700;font-size:15px;
+    flex-shrink:0;
+  }
+  .brand-text h1{font-size:16px;margin:0;font-weight:600;letter-spacing:0.2px;}
+  .brand-text span{font-size:12px;color:var(--ink-soft);}
+
+  .topbar-actions{display:flex;gap:8px;}
+  .icon-btn{
+    background:transparent;border:1px solid var(--line);
+    color:var(--ink-soft);
+    width:36px;height:36px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    transition:border-color .15s, color .15s;
+  }
+  .icon-btn:hover{border-color:var(--clinic-green);color:var(--clinic-green);}
+  .icon-btn svg{width:17px;height:17px;}
+
+  /* ===== Home: test picker ===== */
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .section-label{
+    font-size:12px;color:var(--ink-soft);
+    margin:0 0 14px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .section-label::after{content:"";flex:1;height:1px;background:var(--line-soft);}
+
+  .test-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-bottom:36px;
+  }
+  @media (max-width:640px){ .test-grid{grid-template-columns:1fr;} }
+
+  .test-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px;
+    cursor:pointer;
+    position:relative;
+    transition:border-color .15s, transform .1s;
+    text-align:right;
+  }
+  .test-card:hover{border-color:var(--clinic-green);}
+  .test-card:active{transform:scale(0.995);}
+  .test-card .tag{
+    display:inline-block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.03em;
+    color:var(--clinic-green);
+    background:color-mix(in srgb, var(--clinic-green) 12%, transparent);
+    padding:3px 8px;
+    border-radius:5px;
+    margin-bottom:10px;
+    direction:ltr;
+  }
+  .test-card h3{margin:0 0 6px;font-size:16px;font-weight:600;}
+  .test-card p{margin:0 0 12px;font-size:12.5px;color:var(--ink-soft);}
+  .test-card .meta{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:11.5px;color:var(--ink-soft);
+    padding-top:12px;border-top:1px dashed var(--line-soft);
+  }
+  .test-card .meta b{color:var(--ink);font-weight:600;}
+
+  .records-panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .records-head{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 18px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .records-head h2{font-size:14px;margin:0;font-weight:600;}
+  .records-head-actions{display:flex;gap:8px;}
+
+  .btn{
+    border:1px solid var(--line);
+    background:var(--card);
+    color:var(--ink);
+    padding:8px 14px;
+    border-radius:8px;
+    font-size:12.5px;
+    font-family:inherit;
+    cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;
+    transition:border-color .15s, background .15s;
+  }
+  .btn:hover{border-color:var(--clinic-green);}
+  .btn-primary{
+    background:var(--clinic-green);
+    border-color:var(--clinic-green);
+    color:#fdfcf8;
+    font-weight:600;
+  }
+  .btn-primary:hover{background:var(--clinic-green-deep);border-color:var(--clinic-green-deep);}
+  .btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+  .btn-danger{color:var(--red);}
+  .btn-danger:hover{border-color:var(--red);}
+  .btn svg{width:14px;height:14px;flex-shrink:0;}
+
+  .table-wrap{overflow-x:auto;}
+  table.records{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.records th{
+    text-align:right;
+    padding:9px 16px;
+    color:var(--ink-soft);
+    font-weight:500;
+    font-size:11.5px;
+    border-bottom:1px solid var(--line-soft);
+    white-space:nowrap;
+  }
+  table.records td{
+    padding:10px 16px;
+    border-bottom:1px solid var(--line-soft);
+    white-space:nowrap;
+  }
+  table.records tr:last-child td{border-bottom:none;}
+  table.records tr:hover td{background:var(--paper-2);}
+  .severity-chip{
+    display:inline-block;padding:2px 9px;border-radius:20px;
+    font-size:11px;font-weight:600;
+  }
+  .empty-state{
+    padding:48px 20px;text-align:center;color:var(--ink-soft);font-size:13px;
+  }
+
+  /* ===== Test-taking view ===== */
+  .test-header{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    gap:16px;margin-bottom:22px;
+  }
+  .back-link{
+    display:inline-flex;align-items:center;gap:6px;
+    background:none;border:none;color:var(--ink-soft);
+    font-family:inherit;font-size:12.5px;cursor:pointer;
+    padding:0;margin-bottom:14px;
+  }
+  .back-link:hover{color:var(--clinic-green);}
+  .back-link svg{width:14px;height:14px;transform:scaleX(-1);}
+
+  .test-title-block h2{margin:0 0 4px;font-size:19px;font-weight:700;}
+  .test-title-block p{margin:0;font-size:12.5px;color:var(--ink-soft);}
+
+  .patient-bar{
+    display:grid;grid-template-columns:1fr 1fr 160px;
+    gap:10px;margin-bottom:26px;
+  }
+  @media (max-width:640px){ .patient-bar{grid-template-columns:1fr;} }
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:11px;color:var(--ink-soft);}
+  .field input{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:9px 12px;
+    font-family:inherit;
+    font-size:13.5px;
+    color:var(--ink);
+  }
+  .field input:focus{outline:2px solid var(--focus);outline-offset:1px;border-color:transparent;}
+
+  .progress-track{
+    height:4px;background:var(--line-soft);border-radius:3px;overflow:hidden;
+    margin-bottom:26px;
+  }
+  .progress-fill{height:100%;background:var(--clinic-green);transition:width .2s ease;width:0%;}
+
+  .item-list{display:flex;flex-direction:column;gap:10px;margin-bottom:26px;}
+  .item-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+  }
+  .item-card.answered{border-color:color-mix(in srgb, var(--clinic-green) 40%, var(--line));}
+  .item-top{
+    display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;
+  }
+  .item-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;color:var(--ink-soft);
+    background:var(--paper-2);
+    border-radius:6px;
+    width:24px;height:24px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;margin-top:1px;
+  }
+  .item-text{flex:1;}
+  .item-question{font-size:14px;font-weight:500;margin:0 0 3px;}
+  .item-original{font-size:11.5px;color:var(--ink-soft);margin:0;line-height:1.5;}
+  .item-original.collapsed{
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;
+  }
+
+  .scale-row{
+    display:flex;gap:6px;flex-wrap:wrap;
+    padding-right:36px;
+  }
+  @media (max-width:520px){ .scale-row{padding-right:0;} }
+  .score-btn{
+    flex:1;min-width:44px;
+    border:1px solid var(--line);
+    background:var(--paper-2);
+    color:var(--ink);
+    border-radius:7px;
+    padding:9px 4px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;font-weight:600;
+    cursor:pointer;
+    transition:all .12s;
+    text-align:center;
+  }
+  .score-btn:hover{border-color:var(--clinic-green);}
+  .score-btn.selected{
+    background:var(--clinic-green);
+    border-color:var(--clinic-green);
+    color:#fdfcf8;
+  }
+  .score-btn .lbl{
+    display:block;font-family:'IBM Plex Sans Arabic',sans-serif;
+    font-size:9.5px;font-weight:400;margin-top:2px;opacity:.85;
+  }
+
+  .observer-note{
+    font-size:11px;color:var(--amber);
+    background:color-mix(in srgb, var(--amber) 12%, transparent);
+    border-radius:6px;padding:6px 10px;margin-top:10px;
+    display:flex;gap:6px;align-items:flex-start;
+  }
+
+  .submit-bar{
+    position:sticky;bottom:16px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 18px;
+    display:flex;align-items:center;justify-content:space-between;
+    box-shadow:0 8px 24px rgba(0,0,0,.12);
+    gap:12px;flex-wrap:wrap;
+  }
+  .submit-status{font-size:12.5px;color:var(--ink-soft);}
+  .submit-status b{color:var(--ink);}
+
+  /* ===== Result modal ===== */
+  .overlay{
+    position:fixed;inset:0;background:rgba(20,22,17,.55);
+    display:none;align-items:center;justify-content:center;
+    padding:20px;z-index:50;
+  }
+  .overlay.active{display:flex;}
+  .result-card{
+    background:var(--card);
+    border-radius:14px;
+    max-width:420px;width:100%;
+    padding:28px;
+    text-align:center;
+    border:1px solid var(--line);
+  }
+  .result-eyebrow{font-size:11.5px;color:var(--ink-soft);margin-bottom:6px;}
+  .result-score{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:52px;font-weight:600;line-height:1;
+    margin:10px 0 4px;
+    direction:ltr;
+  }
+  .result-max{font-size:13px;color:var(--ink-soft);margin-bottom:16px;}
+  .result-severity{
+    display:inline-block;padding:6px 16px;border-radius:20px;
+    font-size:13.5px;font-weight:600;margin-bottom:22px;
+  }
+  .result-patient{font-size:13px;color:var(--ink-soft);margin-bottom:24px;}
+  .result-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+
+  /* toast */
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--clinic-green-deep);color:#fdfcf8;
+    padding:10px 20px;border-radius:8px;font-size:13px;
+    opacity:0;pointer-events:none;transition:all .25s;z-index:60;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .footer-note{
+    text-align:center;font-size:11px;color:var(--ink-soft);
+    margin-top:36px;padding-top:16px;border-top:1px dashed var(--line-soft);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">Ψ</div>
+      <div class="brand-text">
+        <h1>سجلّ المقاييس الإكلينيكية</h1>
+        <span>أدوات تقييم موحّدة · تخزين محلي</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="themeToggle" title="تبديل المظهر">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.4 5.4 0 0 1-7.54-7.54c-.44-.06-.9-.1-1.36-.1z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ HOME VIEW ============ -->
+  <div class="view active" id="view-home">
+    <p class="section-label">اختر المقياس</p>
+    <div class="test-grid" id="testGrid"></div>
+
+    <p class="section-label">السجلّات المحفوظة</p>
+    <div class="records-panel">
+      <div class="records-head">
+        <h2 id="recordsCount">0 سجل محفوظ</h2>
+        <div class="records-head-actions">
+          <button class="btn" id="exportAllBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+            تصدير الكل CSV
+          </button>
+          <button class="btn btn-danger" id="clearAllBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3m-8 0l1 13a1 1 0 001 1h6a1 1 0 001-1l1-13"/></svg>
+            حذف الكل
+          </button>
+        </div>
+      </div>
+      <div class="table-wrap" id="recordsTableWrap"></div>
+    </div>
+
+    <div class="footer-note">جميع البيانات تُخزَّن محليًا في متصفحك فقط، ولا تُرسَل لأي خادم.</div>
+  </div>
+
+  <!-- ============ TEST VIEW ============ -->
+  <div class="view" id="view-test">
+    <button class="back-link" id="backBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      رجوع إلى القائمة
+    </button>
+
+    <div class="test-header">
+      <div class="test-title-block">
+        <h2 id="testTitleAr"></h2>
+        <p id="testTitleEn"></p>
+      </div>
+    </div>
+
+    <div class="patient-bar">
+      <div class="field">
+        <label>اسم المريض</label>
+        <input type="text" id="patientName" placeholder="اكتب الاسم">
+      </div>
+      <div class="field">
+        <label>رقم الملف / المعرّف</label>
+        <input type="text" id="patientId" placeholder="اختياري">
+      </div>
+      <div class="field">
+        <label>تاريخ التقييم</label>
+        <input type="date" id="assessDate">
+      </div>
+    </div>
+
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="item-list" id="itemList"></div>
+
+    <div class="submit-bar">
+      <div class="submit-status" id="submitStatus">0 من 0 بندًا</div>
+      <button class="btn btn-primary" id="submitBtn" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+        احتساب النتيجة وحفظها
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Result modal -->
+<div class="overlay" id="resultOverlay">
+  <div class="result-card">
+    <div class="result-eyebrow" id="resultTestName"></div>
+    <div class="result-score" id="resultScore">0</div>
+    <div class="result-max" id="resultMax">من 0</div>
+    <div><span class="result-severity" id="resultSeverity"></span></div>
+    <div class="result-patient" id="resultPatient"></div>
+    <div class="result-actions">
+      <button class="btn" id="resultCloseBtn">إغلاق</button>
+      <button class="btn btn-primary" id="resultExportBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        تصدير هذا السجل
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   DATA: the four scales
+   ============================================================ */
+
+const SCALES = {
+
+  fss: {
+    id:'fss', tag:'FSS', color:'#2f5233',
+    name:'مقياس شدة الإعياء', nameEn:'Fatigue Severity Scale',
+    desc:'9 بنود لتقييم شدة الإعياء وتأثيره على الحياة اليومية.',
+    scoreLabels:['1','2','3','4','5','6','7'],
+    scoreRange:[1,7],
+    items:[
+      {q:'هل الارهاق بيوصلك لمرحلة انك مش عايز تعمل حاجة', orig:'دافعيتي لعمل الأشياء تكون أقل حينما أشعر بالإعياء.'},
+      {q:'بتتعب بسرعة لما تبدأ تتحرك او تعمل رياضة', orig:'حينما أمارس الرياضة، أو أقوم بنشاط يسبب ذلك شعوراً بالإعياء.'},
+      {q:'في العموم بتحس انك بقيت تتعب بسرعة من اقل حاجة', orig:'أصاب بالإعياء بسهولة.'},
+      {q:'هل الارهاق دا بيخليك مش عايز تعمل اي نشاط فيه حركة', orig:'الإعياء يقف في طريق ممارستي لوظائفي الجسدية.'},
+      {q:'هل الارهاق دا بيسببلك مشاكل في حياتك بشكل متكرر', orig:'الإعياء يسبب لي مشاكل عديدة ومتكررة.'},
+      {q:'لما تكون بتعمل حاجة فيه حركة هل الارهاق بيخليك توقف بسرعة ومتقدرش تكمل لفترة طويلة', orig:'الإعياء يمنعني من الاستمرار في عمل وظائفي الجسدية.'},
+      {q:'هل التعب دا بيعطلك كتير عن قضيان مصالحك والانشطة اللي انت متعود تعملها كل يوم', orig:'الإعياء يقف في طريق تأديتي لواجباتي ومهمامي.'},
+      {q:'لو سألتك عن اكتر 3 اعراض بتعطلك عن حياتك هل الارهاق هيكون من الاعراض دي', orig:'الإعياء من أهم ثلاثة أعراض تتسبب في إعاقتي.'},
+      {q:'هل الارهاق بيأثر على شغلك وعيلتك وحياتك الاجتماعية', orig:'الإعياء يضايقني ويؤثر سلباً على عملي، عائلتي، أو حياتي الاجتماعية.'}
+    ],
+    interpret(total, itemCount){
+      const avg = total/itemCount;
+      if(avg < 4) return {label:'لا يوجد إعياء ذو دلالة', color:'#2f5233'};
+      return {label:'إعياء ذو دلالة إكلينيكية', color:'#9c3b2e'};
+    },
+    resultNote:'يُحسب كمتوسط درجات البنود (≥4 يُعد مؤشرًا على إعياء ذي دلالة).'
+  },
+
+  hama: {
+    id:'hama', tag:'HAM-A', color:'#a6702a',
+    name:'مقياس هاملتون للقلق', nameEn:'Hamilton Anxiety Rating Scale',
+    desc:'14 بندًا لتقييم شدة أعراض القلق النفسية والجسدية.',
+    scoreLabels:['0','1','2','3','4'],
+    scoreRange:[0,4],
+    items:[
+      {q:'هل بتحس بقلق طول الوقت ودايما بتتوقع الاسوء', orig:'مزاج قلق: هموم، توقع الأسوأ، شعور بالخوف، تهيج'},
+      {q:'بتحس انك متوتر او اعصابك مشدودة', orig:'التوتر: مشاعر التوتر، تعب، إجفال، بكاء، عدم القدرة على الاسترخاء'},
+      {q:'هل بقا عنك خوف من حاجات معينة زي الظلمة أو الناس الغريبة بشكل غير طبيعي', orig:'المخاوف: من الظلام، الغرباء، الوحدة، الحيوانات، الحشود'},
+      {q:'بتلاقي صعوبة ف انك تنام او بتصحى مرهق', orig:'الأرق: صعوبة النوم، نوم متقطع، تعب عند الاستيقاظ، كوابيس'},
+      {q:'عندك صعوبة ف التركيز او ضعف في الذاكرة', orig:'الحالة الذهنية: صعوبة التركيز وضعف الذاكرة'},
+      {q:'بيجيلك اكتئاب او الحاجات اللي كنت بتحبها معدتش تبسطك', orig:'مزاج مكتئب: فقدان الاهتمام، عدم المتعة، استيقاظ مبكر، تقلب المزاج'},
+      {q:'بيجيلك شد عضلات أو تخشب أو ارتعاش لا إرادي', orig:'حالة جسدية (عضلية): آلام، وخز، صلابة العضلات، ارتعاش'},
+      {q:'بتحس بطنين في ودنك أو زغللة أو مشكلة ف الرؤية', orig:'حالة جسدية (حسية): طنين، زغللة رؤية، هبات ساخنة/باردة، وخز'},
+      {q:'بتحس بضربات قلبك او بيجيلك الم في الصدر', orig:'أعراض القلب والأوعية: تسارع/عدم انتظام ضربات القلب، ألم الصدر، إغماء'},
+      {q:'بيجيلك صعوبة ف التنفس', orig:'أعراض الجهاز التنفسي: ضغط بالصدر، اختناق، تنهد، ضيق تنفس'},
+      {q:'عندك مشاكل في المعدة: الم او احساس انك عايز ترجع، امساك او اسهال', orig:'أعراض الجهاز الهضمي: صعوبة بلع، آلام بطن، غثيان، اضطراب الأمعاء'},
+      {q:'بتحتاج تدخل الحمام كتير أو فيه تغييرات في الدورة', orig:'أعراض الجهاز التناسلي/البولي: كثرة التبول، اضطراب الطمث، ضعف/فقدان الرغبة'},
+      {q:'بيجيلك صداع، بتعرق كتير ف اماكن مش بتبقى حر، او حاسس ان ريقك ناشف', orig:'أعراض الجهاز العصبي الذاتي: جفاف الفم، تعرق، احمرار/شحوب الوجه، صداع'},
+      {q:'يُقيَّم من خلال ملاحظة الفاحص لسلوك الشخص أثناء المقابلة', orig:'السلوك خلال المقابلة: تململ، ارتعاش، تقطب الجبين، تنفس سريع، بلع الريق', observer:true}
+    ],
+    interpret(total){
+      if(total < 18) return {label:'قلق خفيف', color:'#4a7a4f'};
+      if(total <= 24) return {label:'قلق متوسط', color:'#a6702a'};
+      if(total <= 30) return {label:'قلق شديد', color:'#c25a3a'};
+      return {label:'قلق شديد جدًا', color:'#9c3b2e'};
+    },
+    resultNote:'أقل من 18 خفيف · 18–24 متوسط · 25–30 شديد · أكثر من 30 شديد جدًا.'
+  },
+
+  hamd: {
+    id:'hamd', tag:'HAM-D', color:'#9c3b2e',
+    name:'مقياس هاملتون للاكتئاب', nameEn:'Hamilton Depression Rating Scale',
+    desc:'17 بندًا لتقييم شدة أعراض الاكتئاب (نسخة HAM-D الأصلية).',
+    scoreLabels:null, // mixed per-item
+    items:[
+      {q:'بتحس باكتئاب او تشاؤم معظم الوقت', orig:'المزاج الاكتئابي: الابتئاس والغم والتشاؤم بشأن المستقبل، مشاعر الحزن، الرغبة في البكاء', max:4},
+      {q:'هل اوقات كتيرة بتحس بالذنب وتلوم نفسك', orig:'تأنيب الضمير أو الشعور بالذنب: لوم النفس، أفكار بأنه مذنب وخاطئ', max:4},
+      {q:'بتجيلك افكار عن الموت او الانتحار', orig:'الانتحار: يشعر بأن الحياة لا تستحق العيش، يتمنى الموت، أفكار بشأن الانتحار', max:4},
+      {q:'معدتش عايز تشتغل او تخرج ومعندكش حافز تعمل حاجة', orig:'العمل واهتمامات الحياة: مشاعر بالعجز، فقدان الاهتمام بالهوايات، نقص الإنتاجية', max:4},
+      {q:'بتحس بكسل، تفكيرك او كلامك بقا بطيئ', orig:'التكاسل والتثاقل: بطء التفكير والكلام والنشاط، اللامبالاة والذهول', max:4},
+      {q:'في قلق مستمر وتوتر من حاجات بسيطة المفروض متقلقش منها', orig:'القلق النفسي: التوتر وسهولة الاستثارة، التوجس وتوقع الشر', max:4},
+      {q:'هل القلق بيظهر على جسمك زي سرعة ضربات القلب، الم في المعدة، صداع', orig:'القلق الجسمي: أعراض معدية معوية، قلبية، تنفسية', max:4},
+      {q:'بقيت بتقلق كتير بخصوص صحتك وبتتوهم الامراض', orig:'توهم المرض: الانشغال الزائد بالجسم، الانشغال بالصحة، ضلالات بشأن الاصابة بالأمراض', max:4},
+      {q:'بتلاقي صعوبة انك تنام', orig:'الأرق في بداية الليل', max:2},
+      {q:'بتصحى كتير بالليل', orig:'الأرق في منتصف الليل', max:2},
+      {q:'بتصحى بدري ومتقدرش تنام تاني', orig:'الأرق حتى ساعة متأخرة من الليل', max:2},
+      {q:'هل التوتر بيخلي جسمك مش على بعضه، عمال تحرك ف ايديك او تروح وتيجي', orig:'البلبلة والارتياع: عدم الاستقرار (فرك الأيدي والتمشي جيئة وذهابا)', max:2},
+      {q:'عندك مشاكل في الشهية، المعدة، امساك او اسهال', orig:'أعراض جسمية معدية: فقدان الشهية، الإحساس بثقل في البطن، الإمساك', max:2},
+      {q:'بتحس بتقل في جسمك: راسك، ايديك او رجليك', orig:'أعراض جسمية عامة: ثقل في الأطراف أو الظهر أو الرأس، فقدان الحيوية', max:2},
+      {q:'عندك مشاكل جنسية او مشاكل في الدورة', orig:'أعراض جنسية: فقدان الرغبة الجنسية، اضطرابات الطمث', max:2},
+      {q:'هل المريض مدرك انه مريض (يُحدَّد بمعرفة الطبيب)', orig:'الاستبصار: صفر=لم يفقد استبصاره، 1=فاقد جزئيًا، 2=فاقد للاستبصار', max:2, observer:true},
+      {q:'ملاحظ نزول في وزنك بدون ما تحاول تخس', orig:'نقص الوزن', max:2}
+    ],
+    interpret(total){
+      if(total <= 9) return {label:'اكتئاب عادي', color:'#4a7a4f'};
+      if(total <= 17) return {label:'اكتئاب شبه عادي', color:'#7a8a3f'};
+      if(total <= 25) return {label:'اكتئاب خفيف', color:'#a6702a'};
+      if(total <= 38) return {label:'اكتئاب متوسط', color:'#c25a3a'};
+      return {label:'اكتئاب شديد', color:'#9c3b2e'};
+    },
+    resultNote:'0–9 عادي · 10–17 شبه عادي · 18–25 خفيف · 26–38 متوسط · 39–50 شديد.'
+  },
+
+  mfis: {
+    id:'mfis', tag:'MFIS', color:'#3a5a7a',
+    name:'مقياس تأثير الإعياء المعدَّل', nameEn:'Modified Fatigue Impact Scale',
+    desc:'21 بندًا لتقييم تأثير الإعياء على الأداء المعرفي والبدني والنفسي خلال آخر 4 أسابيع.',
+    scoreLabels:['0','1','2','3','4'],
+    scoreRangeHint:'0 أبدًا · 1 نادرًا · 2 أحيانًا · 3 غالبًا · 4 معظم الوقت',
+    scoreRange:[0,4],
+    items:[
+      {q:'تركيزك كان ضعيف', orig:'كنت أقل انتباهًا.'},
+      {q:'مش بتقدر تفضل مركز لفترة طويلة', orig:'واجهت صعوبة في التركيز والانتباه لفترات طويلة.'},
+      {q:'تفكيرك مشوش، مش بتقدر تفكر بوضوح', orig:'كنت غير قادر على التفكير بوضوح.'},
+      {q:'فيه عدم اتزان ف حركتك، بتحس انك هتقع وانت بتتحرك', orig:'كنت غير متزن في حركتي وأجد صعوبة في تناسق حركاتي.'},
+      {q:'بتنسى كتير', orig:'كنت كثير النسيان.'},
+      {q:'بتحس ان اي نشاط فيه حركة او مجهود بيبقا تقيل على قلبك وبتقعد تفكر كذا مرة قبل ما تعمله', orig:'كان عليّ أن أكون حذرًا في أنشطتي البدنية المعتادة في حياتي اليومية.'},
+      {q:'معندكش حماس انك تعمل اي حاجة فيه مجهود بدني', orig:'كنت أقل حماسًا للقيام بأي شيء يتطلب مجهودًا بدنيًا.'},
+      {q:'معندكش حماس انك تخرج او تتعامل مع الناس', orig:'كنت أقل حماسًا للمشاركة في الأنشطة الإجتماعية المعتادة مع الآخرين.'},
+      {q:'كنت بتلاقي صعوبة انك تقضي مشوار او اي حاجة برا البيت', orig:'كانت قدرتي على القيام بأي شيء خارج المنزل محدودة.'},
+      {q:'الانشطة اللي كنت متعود تعملها كل يوم بقت صعب انك تعملها لفترة طويلة', orig:'كان من الصعب عليّ مواصلة مجهود النشاط الروتيني لفترات طويلة.'},
+      {q:'بتلاقي صعوبة انك تاخد قرار وبتفضل متردد', orig:'كان من الصعب عليّ اتخاذ القرارات.'},
+      {q:'معندكش حماس انك تعمل اي حاجة فيها تفكير', orig:'كنت أقل حماسًا للقيام بأي شيء يتطلب التفكير.'},
+      {q:'حاسس بضعف ف العضلات', orig:'شعرت بضعف في عضلاتي.'},
+      {q:'حاسس ان جسمك تعبان عموما', orig:'شعرت بعدم راحة بدنية.'},
+      {q:'بتلاقي صعوبة انك تخلص المهام اللي محتاجة تفكير', orig:'كان من الصعب عليّ إنجاز المهام التي تتطلب تفكيرًا.'},
+      {q:'بتلاقي صعوبة ف ترتيب افكارك لما بيكون مطلوب منك تنجز حاجة في البيت او الشغل', orig:'كان من الصعب عليّ ترتيب أفكاري عند القيام بأشياء في البيت أو العمل.'},
+      {q:'مكنتش قادر تنجز المهام اللي محتاجة مجهود بدني', orig:'كانت قدرتي أقل على إنجاز المهام التي تتطلب مجهودًا بدنيًا.'},
+      {q:'تفكيرك بقا بطيئ', orig:'أصبحت أفكر بشكل أبطأ.'},
+      {q:'كان عندك صعوبة ف التركيز', orig:'كنت أجد صعوبة في التركيز.'},
+      {q:'قللت الانشطة اللي فيها حركة واللي كنت متعود تعملها', orig:'قمت بتقليل أنشطتي البدنية.'},
+      {q:'بتبقى محتاج ترتاح لفترات طويلة اكتر من الاول', orig:'احتجت إلى الراحة أكثر أو لفترات أطول.'}
+    ],
+    interpret(total, itemCount, maxTotal){
+      if(total >= 38) return {label:'تأثير مرتفع للإعياء', color:'#9c3b2e'};
+      if(total >= 20) return {label:'تأثير متوسط للإعياء', color:'#a6702a'};
+      return {label:'تأثير منخفض للإعياء', color:'#4a7a4f'};
+    },
+    resultNote:'كل بند من 0 (أبدًا) إلى 4 (معظم الوقت) — الحد الأقصى الكلي 84.'
+  }
+};
+
+/* ============================================================
+   STORAGE
+   ============================================================ */
+const STORAGE_KEY = 'clinical_scales_records_v1';
+
+function loadRecords(){
+  try{
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  }catch(e){ return []; }
+}
+function saveRecords(records){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+}
+function addRecord(rec){
+  const records = loadRecords();
+  records.unshift(rec);
+  saveRecords(records);
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let currentScale = null;
+let currentAnswers = {}; // itemIndex -> score
+
+/* ============================================================
+   RENDER: HOME
+   ============================================================ */
+function renderTestGrid(){
+  const grid = document.getElementById('testGrid');
+  grid.innerHTML = '';
+  Object.values(SCALES).forEach(scale=>{
+    const card = document.createElement('div');
+    card.className = 'test-card';
+    card.innerHTML = `
+      <span class="tag">${scale.tag}</span>
+      <h3>${scale.name}</h3>
+      <p>${scale.desc}</p>
+      <div class="meta"><span>${scale.nameEn}</span><b>${scale.items.length} بندًا</b></div>
+    `;
+    card.addEventListener('click', ()=> openTest(scale.id));
+    grid.appendChild(card);
+  });
+}
+
+function severityChipHtml(interp){
+  return `<span class="severity-chip" style="background:color-mix(in srgb, ${interp.color} 16%, transparent); color:${interp.color};">${interp.label}</span>`;
+}
+
+function renderRecordsTable(){
+  const records = loadRecords();
+  document.getElementById('recordsCount').textContent = `${records.length} سجل محفوظ`;
+  const wrap = document.getElementById('recordsTableWrap');
+  const exportAllBtn = document.getElementById('exportAllBtn');
+  const clearAllBtn = document.getElementById('clearAllBtn');
+  exportAllBtn.disabled = records.length === 0;
+  clearAllBtn.disabled = records.length === 0;
+
+  if(records.length === 0){
+    wrap.innerHTML = `<div class="empty-state">لا توجد سجلّات محفوظة بعد. ابدأ تقييمًا من الأعلى.</div>`;
+    return;
+  }
+
+  let rows = records.map((r, idx)=>{
+    return `<tr>
+      <td>${r.date}</td>
+      <td><span class="tag" style="background:color-mix(in srgb, ${SCALES[r.scaleId]?.color || '#888'} 14%, transparent); color:${SCALES[r.scaleId]?.color || '#888'};">${r.scaleTag}</span></td>
+      <td>${r.patientName || '—'}</td>
+      <td class="mono">${r.patientId || '—'}</td>
+      <td class="mono">${r.score} / ${r.maxScore}</td>
+      <td>${severityChipHtml({label:r.severityLabel, color:r.severityColor})}</td>
+      <td><button class="btn" data-del="${idx}" style="padding:5px 10px;">حذف</button></td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <table class="records">
+      <thead><tr>
+        <th>التاريخ</th><th>المقياس</th><th>المريض</th><th>المعرّف</th><th>النتيجة</th><th>الشدة</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  wrap.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const i = parseInt(btn.getAttribute('data-del'));
+      const recs = loadRecords();
+      recs.splice(i,1);
+      saveRecords(recs);
+      renderRecordsTable();
+      showToast('تم حذف السجل');
+    });
+  });
+}
+
+/* ============================================================
+   TEST VIEW
+   ============================================================ */
+function openTest(scaleId){
+  currentScale = SCALES[scaleId];
+  currentAnswers = {};
+
+  document.getElementById('testTitleAr').textContent = currentScale.name;
+  document.getElementById('testTitleEn').textContent = currentScale.nameEn;
+  document.getElementById('patientName').value = '';
+  document.getElementById('patientId').value = '';
+  document.getElementById('assessDate').value = new Date().toISOString().slice(0,10);
+
+  renderItems();
+  updateProgress();
+
+  document.getElementById('view-home').classList.remove('active');
+  document.getElementById('view-test').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function closeTest(){
+  document.getElementById('view-test').classList.remove('active');
+  document.getElementById('view-home').classList.add('active');
+  renderRecordsTable();
+}
+
+function renderItems(){
+  const list = document.getElementById('itemList');
+  list.innerHTML = '';
+
+  currentScale.items.forEach((item, idx)=>{
+    const min = 0;
+    const max = item.max !== undefined ? item.max : currentScale.scoreRange[1];
+    const labels = [];
+    for(let s=min; s<=max; s++) labels.push(s);
+
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    card.dataset.idx = idx;
+
+    let scaleHint = '';
+    if(currentScale.scoreRangeHint && idx===0){
+      scaleHint = `<div class="observer-note" style="color:var(--ink-soft);background:var(--paper-2);">${currentScale.scoreRangeHint}</div>`;
+    }
+
+    card.innerHTML = `
+      <div class="item-top">
+        <div class="item-num">${idx+1}</div>
+        <div class="item-text">
+          <p class="item-question">${item.q}</p>
+          <p class="item-original">${item.orig}</p>
+        </div>
+      </div>
+      <div class="scale-row" data-idx="${idx}">
+        ${labels.map(s=>`<button type="button" class="score-btn" data-score="${s}">${s}</button>`).join('')}
+      </div>
+      ${item.observer ? `<div class="observer-note">⚠ يُقيَّم بمعرفة الفاحص وليس بسؤال المريض مباشرة</div>` : ''}
+      ${idx===0 && currentScale.scoreRangeHint ? scaleHint : ''}
+    `;
+    list.appendChild(card);
+  });
+
+  list.querySelectorAll('.scale-row').forEach(row=>{
+    row.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.score-btn');
+      if(!btn) return;
+      const idx = parseInt(row.getAttribute('data-idx'));
+      const score = parseInt(btn.getAttribute('data-score'));
+      currentAnswers[idx] = score;
+
+      row.querySelectorAll('.score-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      row.closest('.item-card').classList.add('answered');
+
+      updateProgress();
+    });
+  });
+}
+
+function updateProgress(){
+  const total = currentScale.items.length;
+  const answered = Object.keys(currentAnswers).length;
+  const pct = total ? (answered/total*100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('submitStatus').innerHTML = `<b>${answered}</b> من ${total} بندًا مُقيَّم`;
+  document.getElementById('submitBtn').disabled = answered < total;
+}
+
+function computeMax(){
+  return currentScale.items.reduce((sum,item)=> sum + (item.max !== undefined ? item.max : currentScale.scoreRange[1]), 0);
+}
+
+document.getElementById('submitBtn').addEventListener('click', ()=>{
+  const total = currentScale.items.length;
+  if(Object.keys(currentAnswers).length < total) return;
+
+  const score = Object.values(currentAnswers).reduce((a,b)=>a+b, 0);
+  const maxScore = computeMax();
+  const interp = currentScale.interpret(score, total, maxScore);
+
+  const patientName = document.getElementById('patientName').value.trim();
+  const patientId = document.getElementById('patientId').value.trim();
+  const date = document.getElementById('assessDate').value || new Date().toISOString().slice(0,10);
+
+  const record = {
+    date,
+    scaleId: currentScale.id,
+    scaleTag: currentScale.tag,
+    scaleName: currentScale.name,
+    patientName,
+    patientId,
+    score,
+    maxScore,
+    severityLabel: interp.label,
+    severityColor: interp.color,
+    answers: currentScale.items.map((item, idx)=>({
+      item: item.orig,
+      question: item.q,
+      score: currentAnswers[idx]
+    }))
+  };
+  addRecord(record);
+  showResult(record, interp);
+});
+
+/* ============================================================
+   RESULT MODAL
+   ============================================================ */
+let lastRecordForExport = null;
+
+function showResult(record, interp){
+  lastRecordForExport = record;
+  document.getElementById('resultTestName').textContent = record.scaleName;
+  document.getElementById('resultScore').textContent = record.score;
+  document.getElementById('resultScore').style.color = interp.color;
+  document.getElementById('resultMax').textContent = `من ${record.maxScore} · ${SCALES[record.scaleId].resultNote || ''}`;
+  document.getElementById('resultSeverity').textContent = interp.label;
+  document.getElementById('resultSeverity').style.background = `color-mix(in srgb, ${interp.color} 16%, transparent)`;
+  document.getElementById('resultSeverity').style.color = interp.color;
+  document.getElementById('resultPatient').textContent =
+    (record.patientName || 'بدون اسم') + (record.patientId ? ' · ' + record.patientId : '') + ' · ' + record.date;
+
+  document.getElementById('resultOverlay').classList.add('active');
+}
+
+document.getElementById('resultCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('resultOverlay').classList.remove('active');
+  closeTest();
+});
+
+document.getElementById('resultExportBtn').addEventListener('click', ()=>{
+  if(lastRecordForExport) exportRecordsToCSV([lastRecordForExport], `${lastRecordForExport.scaleTag}_${lastRecordForExport.patientName || 'patient'}_${lastRecordForExport.date}`);
+});
+
+/* ============================================================
+   CSV EXPORT
+   ============================================================ */
+function csvEscape(val){
+  if(val === undefined || val === null) return '';
+  const s = String(val).replace(/"/g,'""');
+  return `"${s}"`;
+}
+
+function exportRecordsToCSV(records, filename){
+  if(!records.length) return;
+
+  // Determine max number of item columns across records for this export
+  const maxItems = Math.max(...records.map(r => r.answers.length));
+  const headerBase = ['التاريخ','المقياس','رمز المقياس','اسم المريض','رقم الملف','النتيجة الكلية','الحد الأقصى','درجة الشدة'];
+  const itemHeaders = [];
+  for(let i=0;i<maxItems;i++) itemHeaders.push(`بند ${i+1}`);
+
+  const header = [...headerBase, ...itemHeaders];
+  const lines = [header.map(csvEscape).join(',')];
+
+  records.forEach(r=>{
+    const base = [r.date, r.scaleName, r.scaleTag, r.patientName, r.patientId, r.score, r.maxScore, r.severityLabel];
+    const itemVals = [];
+    for(let i=0;i<maxItems;i++){
+      itemVals.push(r.answers[i] !== undefined ? r.answers[i].score : '');
+    }
+    lines.push([...base, ...itemVals].map(csvEscape).join(','));
+  });
+
+  const csvContent = '\uFEFF' + lines.join('\r\n'); // BOM for Excel Arabic support
+  const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${filename}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('تم تصدير الملف');
+}
+
+document.getElementById('exportAllBtn').addEventListener('click', ()=>{
+  const records = loadRecords();
+  if(!records.length) return;
+  exportRecordsToCSV(records, `سجلات_المقاييس_${new Date().toISOString().slice(0,10)}`);
+});
+
+document.getElementById('clearAllBtn').addEventListener('click', ()=>{
+  if(!confirm('هل أنت متأكد من حذف جميع السجلات المحفوظة؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+  saveRecords([]);
+  renderRecordsTable();
+  showToast('تم حذف جميع السجلات');
+});
+
+/* ============================================================
+   NAV / THEME / TOAST
+   ============================================================ */
+document.getElementById('backBtn').addEventListener('click', ()=>{
+  if(Object.keys(currentAnswers).length > 0){
+    if(!confirm('لديك إجابات لم تُحفظ. هل تريد الخروج بدون حفظ؟')) return;
+  }
+  closeTest();
+});
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 2200);
+}
+
+const themeToggle = document.getElementById('themeToggle');
+themeToggle.addEventListener('click', ()=>{
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try{ localStorage.setItem('scales_theme', next); }catch(e){}
+});
+(function initTheme(){
+  try{
+    const saved = localStorage.getItem('scales_theme');
+    if(saved) document.documentElement.setAttribute('data-theme', saved);
+  }catch(e){}
+})();
+
+/* ============================================================
+   INIT
+   ============================================================ */
+renderTestGrid();
+renderRecordsTable();
+</script>
+</body>
+</html>
