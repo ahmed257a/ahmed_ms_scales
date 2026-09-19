@@ -1,958 +1,1047 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>سجلّ المقاييس الإكلينيكية</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --paper:#f6f4ee;
-    --paper-2:#efece2;
-    --ink:#20241f;
-    --ink-soft:#565a4f;
-    --line:#c9c4b2;
-    --line-soft:#dedad0;
-    --clinic-green:#2f5233;
-    --clinic-green-deep:#1e3a22;
-    --amber:#a6702a;
-    --red:#9c3b2e;
-    --card:#fffdf8;
-    --focus:#2f5233;
-  }
-  [data-theme="dark"]{
-    --paper:#171a15;
-    --paper-2:#1f231b;
-    --ink:#eae7db;
-    --ink-soft:#a9a696;
-    --line:#3a3f32;
-    --line-soft:#2b2f24;
-    --clinic-green:#7fae7a;
-    --clinic-green-deep:#9cc797;
-    --amber:#d19a52;
-    --red:#d17c6a;
-    --card:#1c1f18;
-    --focus:#7fae7a;
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --paper:#171a15; --paper-2:#1f231b; --ink:#eae7db; --ink-soft:#a9a696;
-      --line:#3a3f32; --line-soft:#2b2f24; --clinic-green:#7fae7a; --clinic-green-deep:#9cc797;
-      --amber:#d19a52; --red:#d17c6a; --card:#1c1f18; --focus:#7fae7a;
-    }
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Rating Scales & Assessment System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Cairo for Arabic typography) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS for Excel/CSV Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--paper);
-    color:var(--ink);
-    font-family:'IBM Plex Sans Arabic', system-ui, sans-serif;
-    min-height:100vh;
-    line-height:1.5;
-  }
-  .mono{font-family:'IBM Plex Mono', monospace; direction:ltr; display:inline-block;}
-
-  /* ===== App shell ===== */
-  .app{max-width:960px;margin:0 auto;padding:28px 20px 80px;}
-
-  .topbar{
-    display:flex;align-items:center;justify-content:space-between;
-    margin-bottom:28px;
-    padding-bottom:16px;
-    border-bottom:1px solid var(--line);
-  }
-  .brand{display:flex;align-items:center;gap:12px;}
-  .brand-mark{
-    width:38px;height:38px;border-radius:8px;
-    background:var(--clinic-green);
-    display:flex;align-items:center;justify-content:center;
-    color:var(--paper);
-    font-weight:700;font-size:15px;
-    flex-shrink:0;
-  }
-  .brand-text h1{font-size:16px;margin:0;font-weight:600;letter-spacing:0.2px;}
-  .brand-text span{font-size:12px;color:var(--ink-soft);}
-
-  .topbar-actions{display:flex;gap:8px;}
-  .icon-btn{
-    background:transparent;border:1px solid var(--line);
-    color:var(--ink-soft);
-    width:36px;height:36px;border-radius:8px;
-    display:flex;align-items:center;justify-content:center;
-    cursor:pointer;
-    transition:border-color .15s, color .15s;
-  }
-  .icon-btn:hover{border-color:var(--clinic-green);color:var(--clinic-green);}
-  .icon-btn svg{width:17px;height:17px;}
-
-  /* ===== Home: test picker ===== */
-  .view{display:none;}
-  .view.active{display:block;}
-
-  .section-label{
-    font-size:12px;color:var(--ink-soft);
-    margin:0 0 14px;
-    display:flex;align-items:center;gap:10px;
-  }
-  .section-label::after{content:"";flex:1;height:1px;background:var(--line-soft);}
-
-  .test-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:14px;
-    margin-bottom:36px;
-  }
-  @media (max-width:640px){ .test-grid{grid-template-columns:1fr;} }
-
-  .test-card{
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:20px;
-    cursor:pointer;
-    position:relative;
-    transition:border-color .15s, transform .1s;
-    text-align:right;
-  }
-  .test-card:hover{border-color:var(--clinic-green);}
-  .test-card:active{transform:scale(0.995);}
-  .test-card .tag{
-    display:inline-block;
-    font-family:'IBM Plex Mono',monospace;
-    font-size:10.5px;
-    letter-spacing:.03em;
-    color:var(--clinic-green);
-    background:color-mix(in srgb, var(--clinic-green) 12%, transparent);
-    padding:3px 8px;
-    border-radius:5px;
-    margin-bottom:10px;
-    direction:ltr;
-  }
-  .test-card h3{margin:0 0 6px;font-size:16px;font-weight:600;}
-  .test-card p{margin:0 0 12px;font-size:12.5px;color:var(--ink-soft);}
-  .test-card .meta{
-    display:flex;justify-content:space-between;align-items:center;
-    font-size:11.5px;color:var(--ink-soft);
-    padding-top:12px;border-top:1px dashed var(--line-soft);
-  }
-  .test-card .meta b{color:var(--ink);font-weight:600;}
-
-  .records-panel{
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:10px;
-    overflow:hidden;
-  }
-  .records-head{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:14px 18px;
-    border-bottom:1px solid var(--line-soft);
-  }
-  .records-head h2{font-size:14px;margin:0;font-weight:600;}
-  .records-head-actions{display:flex;gap:8px;}
-
-  .btn{
-    border:1px solid var(--line);
-    background:var(--card);
-    color:var(--ink);
-    padding:8px 14px;
-    border-radius:8px;
-    font-size:12.5px;
-    font-family:inherit;
-    cursor:pointer;
-    display:inline-flex;align-items:center;gap:6px;
-    transition:border-color .15s, background .15s;
-  }
-  .btn:hover{border-color:var(--clinic-green);}
-  .btn-primary{
-    background:var(--clinic-green);
-    border-color:var(--clinic-green);
-    color:#fdfcf8;
-    font-weight:600;
-  }
-  .btn-primary:hover{background:var(--clinic-green-deep);border-color:var(--clinic-green-deep);}
-  .btn-primary:disabled{opacity:.45;cursor:not-allowed;}
-  .btn-danger{color:var(--red);}
-  .btn-danger:hover{border-color:var(--red);}
-  .btn svg{width:14px;height:14px;flex-shrink:0;}
-
-  .table-wrap{overflow-x:auto;}
-  table.records{width:100%;border-collapse:collapse;font-size:12.5px;}
-  table.records th{
-    text-align:right;
-    padding:9px 16px;
-    color:var(--ink-soft);
-    font-weight:500;
-    font-size:11.5px;
-    border-bottom:1px solid var(--line-soft);
-    white-space:nowrap;
-  }
-  table.records td{
-    padding:10px 16px;
-    border-bottom:1px solid var(--line-soft);
-    white-space:nowrap;
-  }
-  table.records tr:last-child td{border-bottom:none;}
-  table.records tr:hover td{background:var(--paper-2);}
-  .severity-chip{
-    display:inline-block;padding:2px 9px;border-radius:20px;
-    font-size:11px;font-weight:600;
-  }
-  .empty-state{
-    padding:48px 20px;text-align:center;color:var(--ink-soft);font-size:13px;
-  }
-
-  /* ===== Test-taking view ===== */
-  .test-header{
-    display:flex;align-items:flex-start;justify-content:space-between;
-    gap:16px;margin-bottom:22px;
-  }
-  .back-link{
-    display:inline-flex;align-items:center;gap:6px;
-    background:none;border:none;color:var(--ink-soft);
-    font-family:inherit;font-size:12.5px;cursor:pointer;
-    padding:0;margin-bottom:14px;
-  }
-  .back-link:hover{color:var(--clinic-green);}
-  .back-link svg{width:14px;height:14px;transform:scaleX(-1);}
-
-  .test-title-block h2{margin:0 0 4px;font-size:19px;font-weight:700;}
-  .test-title-block p{margin:0;font-size:12.5px;color:var(--ink-soft);}
-
-  .patient-bar{
-    display:grid;grid-template-columns:1fr 1fr 160px;
-    gap:10px;margin-bottom:26px;
-  }
-  @media (max-width:640px){ .patient-bar{grid-template-columns:1fr;} }
-  .field{display:flex;flex-direction:column;gap:5px;}
-  .field label{font-size:11px;color:var(--ink-soft);}
-  .field input{
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:8px;
-    padding:9px 12px;
-    font-family:inherit;
-    font-size:13.5px;
-    color:var(--ink);
-  }
-  .field input:focus{outline:2px solid var(--focus);outline-offset:1px;border-color:transparent;}
-
-  .progress-track{
-    height:4px;background:var(--line-soft);border-radius:3px;overflow:hidden;
-    margin-bottom:26px;
-  }
-  .progress-fill{height:100%;background:var(--clinic-green);transition:width .2s ease;width:0%;}
-
-  .item-list{display:flex;flex-direction:column;gap:10px;margin-bottom:26px;}
-  .item-card{
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:16px 18px;
-  }
-  .item-card.answered{border-color:color-mix(in srgb, var(--clinic-green) 40%, var(--line));}
-  .item-top{
-    display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;
-  }
-  .item-num{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11px;color:var(--ink-soft);
-    background:var(--paper-2);
-    border-radius:6px;
-    width:24px;height:24px;
-    display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;margin-top:1px;
-  }
-  .item-text{flex:1;}
-  .item-question{font-size:14px;font-weight:500;margin:0 0 3px;}
-  .item-original{font-size:11.5px;color:var(--ink-soft);margin:0;line-height:1.5;}
-  .item-original.collapsed{
-    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;
-  }
-
-  .scale-row{
-    display:flex;gap:6px;flex-wrap:wrap;
-    padding-right:36px;
-  }
-  @media (max-width:520px){ .scale-row{padding-right:0;} }
-  .score-btn{
-    flex:1;min-width:44px;
-    border:1px solid var(--line);
-    background:var(--paper-2);
-    color:var(--ink);
-    border-radius:7px;
-    padding:9px 4px;
-    font-family:'IBM Plex Mono',monospace;
-    font-size:13px;font-weight:600;
-    cursor:pointer;
-    transition:all .12s;
-    text-align:center;
-  }
-  .score-btn:hover{border-color:var(--clinic-green);}
-  .score-btn.selected{
-    background:var(--clinic-green);
-    border-color:var(--clinic-green);
-    color:#fdfcf8;
-  }
-  .score-btn .lbl{
-    display:block;font-family:'IBM Plex Sans Arabic',sans-serif;
-    font-size:9.5px;font-weight:400;margin-top:2px;opacity:.85;
-  }
-
-  .observer-note{
-    font-size:11px;color:var(--amber);
-    background:color-mix(in srgb, var(--amber) 12%, transparent);
-    border-radius:6px;padding:6px 10px;margin-top:10px;
-    display:flex;gap:6px;align-items:flex-start;
-  }
-
-  .submit-bar{
-    position:sticky;bottom:16px;
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:12px;
-    padding:14px 18px;
-    display:flex;align-items:center;justify-content:space-between;
-    box-shadow:0 8px 24px rgba(0,0,0,.12);
-    gap:12px;flex-wrap:wrap;
-  }
-  .submit-status{font-size:12.5px;color:var(--ink-soft);}
-  .submit-status b{color:var(--ink);}
-
-  /* ===== Result modal ===== */
-  .overlay{
-    position:fixed;inset:0;background:rgba(20,22,17,.55);
-    display:none;align-items:center;justify-content:center;
-    padding:20px;z-index:50;
-  }
-  .overlay.active{display:flex;}
-  .result-card{
-    background:var(--card);
-    border-radius:14px;
-    max-width:420px;width:100%;
-    padding:28px;
-    text-align:center;
-    border:1px solid var(--line);
-  }
-  .result-eyebrow{font-size:11.5px;color:var(--ink-soft);margin-bottom:6px;}
-  .result-score{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:52px;font-weight:600;line-height:1;
-    margin:10px 0 4px;
-    direction:ltr;
-  }
-  .result-max{font-size:13px;color:var(--ink-soft);margin-bottom:16px;}
-  .result-severity{
-    display:inline-block;padding:6px 16px;border-radius:20px;
-    font-size:13.5px;font-weight:600;margin-bottom:22px;
-  }
-  .result-patient{font-size:13px;color:var(--ink-soft);margin-bottom:24px;}
-  .result-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
-
-  /* toast */
-  .toast{
-    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
-    background:var(--clinic-green-deep);color:#fdfcf8;
-    padding:10px 20px;border-radius:8px;font-size:13px;
-    opacity:0;pointer-events:none;transition:all .25s;z-index:60;
-  }
-  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-
-  .footer-note{
-    text-align:center;font-size:11px;color:var(--ink-soft);
-    margin-top:36px;padding-top:16px;border-top:1px dashed var(--line-soft);
-  }
-</style>
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+        .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 700; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        /* Record detail modal: print only the modal content */
+        @media print {
+            body > *:not(#recordModal) { display: none !important; }
+            #recordModal { position: static !important; background: none !important; padding: 0 !important; display: block !important; }
+            #recordModal .modal-panel { box-shadow: none !important; max-height: none !important; overflow: visible !important; border: none !important; }
+            #recordModal .no-print { display: none !important; }
+            #recordModalBody { overflow: visible !important; max-height: none !important; }
+        }
+    </style>
 </head>
-<body>
-<div class="app">
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col">
 
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark">Ψ</div>
-      <div class="brand-text">
-        <h1>سجلّ المقاييس الإكلينيكية</h1>
-        <span>أدوات تقييم موحّدة · تخزين محلي</span>
-      </div>
-    </div>
-    <div class="topbar-actions">
-      <button class="icon-btn" id="themeToggle" title="تبديل المظهر">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.4 5.4 0 0 1-7.54-7.54c-.44-.06-.9-.1-1.36-.1z"/></svg>
-      </button>
-    </div>
-  </div>
-
-  <!-- ============ HOME VIEW ============ -->
-  <div class="view active" id="view-home">
-    <p class="section-label">اختر المقياس</p>
-    <div class="test-grid" id="testGrid"></div>
-
-    <p class="section-label">السجلّات المحفوظة</p>
-    <div class="records-panel">
-      <div class="records-head">
-        <h2 id="recordsCount">0 سجل محفوظ</h2>
-        <div class="records-head-actions">
-          <button class="btn" id="exportAllBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-            تصدير الكل CSV
-          </button>
-          <button class="btn btn-danger" id="clearAllBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3m-8 0l1 13a1 1 0 001 1h6a1 1 0 001-1l1-13"/></svg>
-            حذف الكل
-          </button>
+    <!-- Navigation Header -->
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3 space-x-reverse cursor-pointer" onclick="showView('home')">
+                <i class="fa-solid fa-stethoscope text-blue-400 text-2xl"></i>
+                <div>
+                    <h1 class="text-lg font-bold leading-none">نظام التقييم والاختبارات السريرية</h1>
+                    <span class="text-xs text-slate-400">Clinical Assessment System</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="showView('records')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-lg transition flex items-center gap-2 border border-slate-700">
+                    <i class="fa-solid fa-database text-blue-400"></i> السجلات المخزنة (<span id="recordCount">0</span>)
+                </button>
+            </div>
         </div>
-      </div>
-      <div class="table-wrap" id="recordsTableWrap"></div>
-    </div>
+    </header>
 
-    <div class="footer-note">جميع البيانات تُخزَّن محليًا في متصفحك فقط، ولا تُرسَل لأي خادم.</div>
-  </div>
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
 
-  <!-- ============ TEST VIEW ============ -->
-  <div class="view" id="view-test">
-    <button class="back-link" id="backBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-      رجوع إلى القائمة
-    </button>
+        <!-- HOME VIEW -->
+        <div id="view-home" class="view-panel space-y-6">
+            <div class="bg-blue-900 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold mb-1">المقاييس والاختبارات المتاحة</h2>
+                    <p class="text-blue-200 text-sm">اختر الاختبار المطلوب لتقييم المريض وحساب الدرجات فوراً.</p>
+                </div>
+                <i class="fa-solid fa-clipboard-list text-5xl text-blue-400 opacity-50 hidden sm:block"></i>
+            </div>
 
-    <div class="test-header">
-      <div class="test-title-block">
-        <h2 id="testTitleAr"></h2>
-        <p id="testTitleEn"></p>
-      </div>
-    </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Card 1: FSS -->
+                <div onclick="startTest('FSS')" class="glass-card rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group">
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="px-2.5 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full">Mean Score (1-7)</span>
+                            <i class="fa-solid fa-bolt text-amber-500 group-hover:scale-110 transition"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">Fatigue Severity Scale</h3>
+                        <p class="text-xs text-slate-500 mt-1">مقياس شدة الإعياء (FSS)</p>
+                        <p class="text-sm text-slate-600 mt-3">9 بنود تقيس تأثير الإعياء على الأنشطة والوظائف الجسدية والاجتماعية.</p>
+                    </div>
+                    <div class="mt-5 pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-blue-600 font-semibold">
+                        <span>بدء التقييم</span>
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </div>
+                </div>
 
-    <div class="patient-bar">
-      <div class="field">
-        <label>اسم المريض</label>
-        <input type="text" id="patientName" placeholder="اكتب الاسم">
-      </div>
-      <div class="field">
-        <label>رقم الملف / المعرّف</label>
-        <input type="text" id="patientId" placeholder="اختياري">
-      </div>
-      <div class="field">
-        <label>تاريخ التقييم</label>
-        <input type="date" id="assessDate">
-      </div>
-    </div>
+                <!-- Card 2: HAM-A -->
+                <div onclick="startTest('HAMA')" class="glass-card rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group">
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">Total Sum (0-56)</span>
+                            <i class="fa-solid fa-heart-pulse text-emerald-500 group-hover:scale-110 transition"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">Hamilton Anxiety Scale</h3>
+                        <p class="text-xs text-slate-500 mt-1">مقياس هاملتون للقلق (HAM-A)</p>
+                        <p class="text-sm text-slate-600 mt-3">14 عرضاً لتقييم الشدة النفسية والجسمانية لأعراض القلق.</p>
+                    </div>
+                    <div class="mt-5 pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-blue-600 font-semibold">
+                        <span>بدء التقييم</span>
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </div>
+                </div>
 
-    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+                <!-- Card 3: HAM-D -->
+                <div onclick="startTest('HAMD')" class="glass-card rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group">
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="px-2.5 py-1 bg-indigo-100 text-indigo-800 text-xs font-bold rounded-full">Total Sum (0-52)</span>
+                            <i class="fa-solid fa-cloud-rain text-indigo-500 group-hover:scale-110 transition"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">Hamilton Depression Scale</h3>
+                        <p class="text-xs text-slate-500 mt-1">مقياس هاملتون للاكتئاب (HAM-D)</p>
+                        <p class="text-sm text-slate-600 mt-3">17 بنداً لتشخيص وتقدير شدة أعراض الاكتئاب وتأثيرها.</p>
+                    </div>
+                    <div class="mt-5 pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-blue-600 font-semibold">
+                        <span>بدء التقييم</span>
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </div>
+                </div>
 
-    <div class="item-list" id="itemList"></div>
+                <!-- Card 4: MFIS -->
+                <div onclick="startTest('MFIS')" class="glass-card rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group">
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="px-2.5 py-1 bg-purple-100 text-purple-800 text-xs font-bold rounded-full">Total Sum (0-84)</span>
+                            <i class="fa-solid fa-battery-quarter text-purple-500 group-hover:scale-110 transition"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">Modified Fatigue Impact Scale</h3>
+                        <p class="text-xs text-slate-500 mt-1">مقياس تأثير الإعياء المعدل (MFIS)</p>
+                        <p class="text-sm text-slate-600 mt-3">21 بنداً يغطي التأثيرات الجسدية والمعرفية والنفسية للإعياء.</p>
+                    </div>
+                    <div class="mt-5 pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-blue-600 font-semibold">
+                        <span>بدء التقييم</span>
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </div>
+                </div>
 
-    <div class="submit-bar">
-      <div class="submit-status" id="submitStatus">0 من 0 بندًا</div>
-      <button class="btn btn-primary" id="submitBtn" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
-        احتساب النتيجة وحفظها
-      </button>
-    </div>
-  </div>
-
-</div>
-
-<!-- Result modal -->
-<div class="overlay" id="resultOverlay">
-  <div class="result-card">
-    <div class="result-eyebrow" id="resultTestName"></div>
-    <div class="result-score" id="resultScore">0</div>
-    <div class="result-max" id="resultMax">من 0</div>
-    <div><span class="result-severity" id="resultSeverity"></span></div>
-    <div class="result-patient" id="resultPatient"></div>
-    <div class="result-actions">
-      <button class="btn" id="resultCloseBtn">إغلاق</button>
-      <button class="btn btn-primary" id="resultExportBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-        تصدير هذا السجل
-      </button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-/* ============================================================
-   DATA: the four scales
-   ============================================================ */
-
-const SCALES = {
-
-  fss: {
-    id:'fss', tag:'FSS', color:'#2f5233',
-    name:'مقياس شدة الإعياء', nameEn:'Fatigue Severity Scale',
-    desc:'9 بنود لتقييم شدة الإعياء وتأثيره على الحياة اليومية.',
-    scoreLabels:['1','2','3','4','5','6','7'],
-    scoreRange:[1,7],
-    items:[
-      {q:'هل الارهاق بيوصلك لمرحلة انك مش عايز تعمل حاجة', orig:'دافعيتي لعمل الأشياء تكون أقل حينما أشعر بالإعياء.'},
-      {q:'بتتعب بسرعة لما تبدأ تتحرك او تعمل رياضة', orig:'حينما أمارس الرياضة، أو أقوم بنشاط يسبب ذلك شعوراً بالإعياء.'},
-      {q:'في العموم بتحس انك بقيت تتعب بسرعة من اقل حاجة', orig:'أصاب بالإعياء بسهولة.'},
-      {q:'هل الارهاق دا بيخليك مش عايز تعمل اي نشاط فيه حركة', orig:'الإعياء يقف في طريق ممارستي لوظائفي الجسدية.'},
-      {q:'هل الارهاق دا بيسببلك مشاكل في حياتك بشكل متكرر', orig:'الإعياء يسبب لي مشاكل عديدة ومتكررة.'},
-      {q:'لما تكون بتعمل حاجة فيه حركة هل الارهاق بيخليك توقف بسرعة ومتقدرش تكمل لفترة طويلة', orig:'الإعياء يمنعني من الاستمرار في عمل وظائفي الجسدية.'},
-      {q:'هل التعب دا بيعطلك كتير عن قضيان مصالحك والانشطة اللي انت متعود تعملها كل يوم', orig:'الإعياء يقف في طريق تأديتي لواجباتي ومهمامي.'},
-      {q:'لو سألتك عن اكتر 3 اعراض بتعطلك عن حياتك هل الارهاق هيكون من الاعراض دي', orig:'الإعياء من أهم ثلاثة أعراض تتسبب في إعاقتي.'},
-      {q:'هل الارهاق بيأثر على شغلك وعيلتك وحياتك الاجتماعية', orig:'الإعياء يضايقني ويؤثر سلباً على عملي، عائلتي، أو حياتي الاجتماعية.'}
-    ],
-    interpret(total, itemCount){
-      const avg = total/itemCount;
-      if(avg < 4) return {label:'لا يوجد إعياء ذو دلالة', color:'#2f5233'};
-      return {label:'إعياء ذو دلالة إكلينيكية', color:'#9c3b2e'};
-    },
-    resultNote:'يُحسب كمتوسط درجات البنود (≥4 يُعد مؤشرًا على إعياء ذي دلالة).'
-  },
-
-  hama: {
-    id:'hama', tag:'HAM-A', color:'#a6702a',
-    name:'مقياس هاملتون للقلق', nameEn:'Hamilton Anxiety Rating Scale',
-    desc:'14 بندًا لتقييم شدة أعراض القلق النفسية والجسدية.',
-    scoreLabels:['0','1','2','3','4'],
-    scoreRange:[0,4],
-    items:[
-      {q:'هل بتحس بقلق طول الوقت ودايما بتتوقع الاسوء', orig:'مزاج قلق: هموم، توقع الأسوأ، شعور بالخوف، تهيج'},
-      {q:'بتحس انك متوتر او اعصابك مشدودة', orig:'التوتر: مشاعر التوتر، تعب، إجفال، بكاء، عدم القدرة على الاسترخاء'},
-      {q:'هل بقا عنك خوف من حاجات معينة زي الظلمة أو الناس الغريبة بشكل غير طبيعي', orig:'المخاوف: من الظلام، الغرباء، الوحدة، الحيوانات، الحشود'},
-      {q:'بتلاقي صعوبة ف انك تنام او بتصحى مرهق', orig:'الأرق: صعوبة النوم، نوم متقطع، تعب عند الاستيقاظ، كوابيس'},
-      {q:'عندك صعوبة ف التركيز او ضعف في الذاكرة', orig:'الحالة الذهنية: صعوبة التركيز وضعف الذاكرة'},
-      {q:'بيجيلك اكتئاب او الحاجات اللي كنت بتحبها معدتش تبسطك', orig:'مزاج مكتئب: فقدان الاهتمام، عدم المتعة، استيقاظ مبكر، تقلب المزاج'},
-      {q:'بيجيلك شد عضلات أو تخشب أو ارتعاش لا إرادي', orig:'حالة جسدية (عضلية): آلام، وخز، صلابة العضلات، ارتعاش'},
-      {q:'بتحس بطنين في ودنك أو زغللة أو مشكلة ف الرؤية', orig:'حالة جسدية (حسية): طنين، زغللة رؤية، هبات ساخنة/باردة، وخز'},
-      {q:'بتحس بضربات قلبك او بيجيلك الم في الصدر', orig:'أعراض القلب والأوعية: تسارع/عدم انتظام ضربات القلب، ألم الصدر، إغماء'},
-      {q:'بيجيلك صعوبة ف التنفس', orig:'أعراض الجهاز التنفسي: ضغط بالصدر، اختناق، تنهد، ضيق تنفس'},
-      {q:'عندك مشاكل في المعدة: الم او احساس انك عايز ترجع، امساك او اسهال', orig:'أعراض الجهاز الهضمي: صعوبة بلع، آلام بطن، غثيان، اضطراب الأمعاء'},
-      {q:'بتحتاج تدخل الحمام كتير أو فيه تغييرات في الدورة', orig:'أعراض الجهاز التناسلي/البولي: كثرة التبول، اضطراب الطمث، ضعف/فقدان الرغبة'},
-      {q:'بيجيلك صداع، بتعرق كتير ف اماكن مش بتبقى حر، او حاسس ان ريقك ناشف', orig:'أعراض الجهاز العصبي الذاتي: جفاف الفم، تعرق، احمرار/شحوب الوجه، صداع'},
-      {q:'يُقيَّم من خلال ملاحظة الفاحص لسلوك الشخص أثناء المقابلة', orig:'السلوك خلال المقابلة: تململ، ارتعاش، تقطب الجبين، تنفس سريع، بلع الريق', observer:true}
-    ],
-    interpret(total){
-      if(total < 18) return {label:'قلق خفيف', color:'#4a7a4f'};
-      if(total <= 24) return {label:'قلق متوسط', color:'#a6702a'};
-      if(total <= 30) return {label:'قلق شديد', color:'#c25a3a'};
-      return {label:'قلق شديد جدًا', color:'#9c3b2e'};
-    },
-    resultNote:'أقل من 18 خفيف · 18–24 متوسط · 25–30 شديد · أكثر من 30 شديد جدًا.'
-  },
-
-  hamd: {
-    id:'hamd', tag:'HAM-D', color:'#9c3b2e',
-    name:'مقياس هاملتون للاكتئاب', nameEn:'Hamilton Depression Rating Scale',
-    desc:'17 بندًا لتقييم شدة أعراض الاكتئاب (نسخة HAM-D الأصلية).',
-    scoreLabels:null, // mixed per-item
-    items:[
-      {q:'بتحس باكتئاب او تشاؤم معظم الوقت', orig:'المزاج الاكتئابي: الابتئاس والغم والتشاؤم بشأن المستقبل، مشاعر الحزن، الرغبة في البكاء', max:4},
-      {q:'هل اوقات كتيرة بتحس بالذنب وتلوم نفسك', orig:'تأنيب الضمير أو الشعور بالذنب: لوم النفس، أفكار بأنه مذنب وخاطئ', max:4},
-      {q:'بتجيلك افكار عن الموت او الانتحار', orig:'الانتحار: يشعر بأن الحياة لا تستحق العيش، يتمنى الموت، أفكار بشأن الانتحار', max:4},
-      {q:'معدتش عايز تشتغل او تخرج ومعندكش حافز تعمل حاجة', orig:'العمل واهتمامات الحياة: مشاعر بالعجز، فقدان الاهتمام بالهوايات، نقص الإنتاجية', max:4},
-      {q:'بتحس بكسل، تفكيرك او كلامك بقا بطيئ', orig:'التكاسل والتثاقل: بطء التفكير والكلام والنشاط، اللامبالاة والذهول', max:4},
-      {q:'في قلق مستمر وتوتر من حاجات بسيطة المفروض متقلقش منها', orig:'القلق النفسي: التوتر وسهولة الاستثارة، التوجس وتوقع الشر', max:4},
-      {q:'هل القلق بيظهر على جسمك زي سرعة ضربات القلب، الم في المعدة، صداع', orig:'القلق الجسمي: أعراض معدية معوية، قلبية، تنفسية', max:4},
-      {q:'بقيت بتقلق كتير بخصوص صحتك وبتتوهم الامراض', orig:'توهم المرض: الانشغال الزائد بالجسم، الانشغال بالصحة، ضلالات بشأن الاصابة بالأمراض', max:4},
-      {q:'بتلاقي صعوبة انك تنام', orig:'الأرق في بداية الليل', max:2},
-      {q:'بتصحى كتير بالليل', orig:'الأرق في منتصف الليل', max:2},
-      {q:'بتصحى بدري ومتقدرش تنام تاني', orig:'الأرق حتى ساعة متأخرة من الليل', max:2},
-      {q:'هل التوتر بيخلي جسمك مش على بعضه، عمال تحرك ف ايديك او تروح وتيجي', orig:'البلبلة والارتياع: عدم الاستقرار (فرك الأيدي والتمشي جيئة وذهابا)', max:2},
-      {q:'عندك مشاكل في الشهية، المعدة، امساك او اسهال', orig:'أعراض جسمية معدية: فقدان الشهية، الإحساس بثقل في البطن، الإمساك', max:2},
-      {q:'بتحس بتقل في جسمك: راسك، ايديك او رجليك', orig:'أعراض جسمية عامة: ثقل في الأطراف أو الظهر أو الرأس، فقدان الحيوية', max:2},
-      {q:'عندك مشاكل جنسية او مشاكل في الدورة', orig:'أعراض جنسية: فقدان الرغبة الجنسية، اضطرابات الطمث', max:2},
-      {q:'هل المريض مدرك انه مريض (يُحدَّد بمعرفة الطبيب)', orig:'الاستبصار: صفر=لم يفقد استبصاره، 1=فاقد جزئيًا، 2=فاقد للاستبصار', max:2, observer:true},
-      {q:'ملاحظ نزول في وزنك بدون ما تحاول تخس', orig:'نقص الوزن', max:2}
-    ],
-    interpret(total){
-      if(total <= 9) return {label:'اكتئاب عادي', color:'#4a7a4f'};
-      if(total <= 17) return {label:'اكتئاب شبه عادي', color:'#7a8a3f'};
-      if(total <= 25) return {label:'اكتئاب خفيف', color:'#a6702a'};
-      if(total <= 38) return {label:'اكتئاب متوسط', color:'#c25a3a'};
-      return {label:'اكتئاب شديد', color:'#9c3b2e'};
-    },
-    resultNote:'0–9 عادي · 10–17 شبه عادي · 18–25 خفيف · 26–38 متوسط · 39–50 شديد.'
-  },
-
-  mfis: {
-    id:'mfis', tag:'MFIS', color:'#3a5a7a',
-    name:'مقياس تأثير الإعياء المعدَّل', nameEn:'Modified Fatigue Impact Scale',
-    desc:'21 بندًا لتقييم تأثير الإعياء على الأداء المعرفي والبدني والنفسي خلال آخر 4 أسابيع.',
-    scoreLabels:['0','1','2','3','4'],
-    scoreRangeHint:'0 أبدًا · 1 نادرًا · 2 أحيانًا · 3 غالبًا · 4 معظم الوقت',
-    scoreRange:[0,4],
-    items:[
-      {q:'تركيزك كان ضعيف', orig:'كنت أقل انتباهًا.'},
-      {q:'مش بتقدر تفضل مركز لفترة طويلة', orig:'واجهت صعوبة في التركيز والانتباه لفترات طويلة.'},
-      {q:'تفكيرك مشوش، مش بتقدر تفكر بوضوح', orig:'كنت غير قادر على التفكير بوضوح.'},
-      {q:'فيه عدم اتزان ف حركتك، بتحس انك هتقع وانت بتتحرك', orig:'كنت غير متزن في حركتي وأجد صعوبة في تناسق حركاتي.'},
-      {q:'بتنسى كتير', orig:'كنت كثير النسيان.'},
-      {q:'بتحس ان اي نشاط فيه حركة او مجهود بيبقا تقيل على قلبك وبتقعد تفكر كذا مرة قبل ما تعمله', orig:'كان عليّ أن أكون حذرًا في أنشطتي البدنية المعتادة في حياتي اليومية.'},
-      {q:'معندكش حماس انك تعمل اي حاجة فيه مجهود بدني', orig:'كنت أقل حماسًا للقيام بأي شيء يتطلب مجهودًا بدنيًا.'},
-      {q:'معندكش حماس انك تخرج او تتعامل مع الناس', orig:'كنت أقل حماسًا للمشاركة في الأنشطة الإجتماعية المعتادة مع الآخرين.'},
-      {q:'كنت بتلاقي صعوبة انك تقضي مشوار او اي حاجة برا البيت', orig:'كانت قدرتي على القيام بأي شيء خارج المنزل محدودة.'},
-      {q:'الانشطة اللي كنت متعود تعملها كل يوم بقت صعب انك تعملها لفترة طويلة', orig:'كان من الصعب عليّ مواصلة مجهود النشاط الروتيني لفترات طويلة.'},
-      {q:'بتلاقي صعوبة انك تاخد قرار وبتفضل متردد', orig:'كان من الصعب عليّ اتخاذ القرارات.'},
-      {q:'معندكش حماس انك تعمل اي حاجة فيها تفكير', orig:'كنت أقل حماسًا للقيام بأي شيء يتطلب التفكير.'},
-      {q:'حاسس بضعف ف العضلات', orig:'شعرت بضعف في عضلاتي.'},
-      {q:'حاسس ان جسمك تعبان عموما', orig:'شعرت بعدم راحة بدنية.'},
-      {q:'بتلاقي صعوبة انك تخلص المهام اللي محتاجة تفكير', orig:'كان من الصعب عليّ إنجاز المهام التي تتطلب تفكيرًا.'},
-      {q:'بتلاقي صعوبة ف ترتيب افكارك لما بيكون مطلوب منك تنجز حاجة في البيت او الشغل', orig:'كان من الصعب عليّ ترتيب أفكاري عند القيام بأشياء في البيت أو العمل.'},
-      {q:'مكنتش قادر تنجز المهام اللي محتاجة مجهود بدني', orig:'كانت قدرتي أقل على إنجاز المهام التي تتطلب مجهودًا بدنيًا.'},
-      {q:'تفكيرك بقا بطيئ', orig:'أصبحت أفكر بشكل أبطأ.'},
-      {q:'كان عندك صعوبة ف التركيز', orig:'كنت أجد صعوبة في التركيز.'},
-      {q:'قللت الانشطة اللي فيها حركة واللي كنت متعود تعملها', orig:'قمت بتقليل أنشطتي البدنية.'},
-      {q:'بتبقى محتاج ترتاح لفترات طويلة اكتر من الاول', orig:'احتجت إلى الراحة أكثر أو لفترات أطول.'}
-    ],
-    interpret(total, itemCount, maxTotal){
-      if(total >= 38) return {label:'تأثير مرتفع للإعياء', color:'#9c3b2e'};
-      if(total >= 20) return {label:'تأثير متوسط للإعياء', color:'#a6702a'};
-      return {label:'تأثير منخفض للإعياء', color:'#4a7a4f'};
-    },
-    resultNote:'كل بند من 0 (أبدًا) إلى 4 (معظم الوقت) — الحد الأقصى الكلي 84.'
-  }
-};
-
-/* ============================================================
-   STORAGE
-   ============================================================ */
-const STORAGE_KEY = 'clinical_scales_records_v1';
-
-function loadRecords(){
-  try{
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  }catch(e){ return []; }
-}
-function saveRecords(records){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-}
-function addRecord(rec){
-  const records = loadRecords();
-  records.unshift(rec);
-  saveRecords(records);
-}
-
-/* ============================================================
-   STATE
-   ============================================================ */
-let currentScale = null;
-let currentAnswers = {}; // itemIndex -> score
-
-/* ============================================================
-   RENDER: HOME
-   ============================================================ */
-function renderTestGrid(){
-  const grid = document.getElementById('testGrid');
-  grid.innerHTML = '';
-  Object.values(SCALES).forEach(scale=>{
-    const card = document.createElement('div');
-    card.className = 'test-card';
-    card.innerHTML = `
-      <span class="tag">${scale.tag}</span>
-      <h3>${scale.name}</h3>
-      <p>${scale.desc}</p>
-      <div class="meta"><span>${scale.nameEn}</span><b>${scale.items.length} بندًا</b></div>
-    `;
-    card.addEventListener('click', ()=> openTest(scale.id));
-    grid.appendChild(card);
-  });
-}
-
-function severityChipHtml(interp){
-  return `<span class="severity-chip" style="background:color-mix(in srgb, ${interp.color} 16%, transparent); color:${interp.color};">${interp.label}</span>`;
-}
-
-function renderRecordsTable(){
-  const records = loadRecords();
-  document.getElementById('recordsCount').textContent = `${records.length} سجل محفوظ`;
-  const wrap = document.getElementById('recordsTableWrap');
-  const exportAllBtn = document.getElementById('exportAllBtn');
-  const clearAllBtn = document.getElementById('clearAllBtn');
-  exportAllBtn.disabled = records.length === 0;
-  clearAllBtn.disabled = records.length === 0;
-
-  if(records.length === 0){
-    wrap.innerHTML = `<div class="empty-state">لا توجد سجلّات محفوظة بعد. ابدأ تقييمًا من الأعلى.</div>`;
-    return;
-  }
-
-  let rows = records.map((r, idx)=>{
-    return `<tr>
-      <td>${r.date}</td>
-      <td><span class="tag" style="background:color-mix(in srgb, ${SCALES[r.scaleId]?.color || '#888'} 14%, transparent); color:${SCALES[r.scaleId]?.color || '#888'};">${r.scaleTag}</span></td>
-      <td>${r.patientName || '—'}</td>
-      <td class="mono">${r.patientId || '—'}</td>
-      <td class="mono">${r.score} / ${r.maxScore}</td>
-      <td>${severityChipHtml({label:r.severityLabel, color:r.severityColor})}</td>
-      <td><button class="btn" data-del="${idx}" style="padding:5px 10px;">حذف</button></td>
-    </tr>`;
-  }).join('');
-
-  wrap.innerHTML = `
-    <table class="records">
-      <thead><tr>
-        <th>التاريخ</th><th>المقياس</th><th>المريض</th><th>المعرّف</th><th>النتيجة</th><th>الشدة</th><th></th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-
-  wrap.querySelectorAll('[data-del]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const i = parseInt(btn.getAttribute('data-del'));
-      const recs = loadRecords();
-      recs.splice(i,1);
-      saveRecords(recs);
-      renderRecordsTable();
-      showToast('تم حذف السجل');
-    });
-  });
-}
-
-/* ============================================================
-   TEST VIEW
-   ============================================================ */
-function openTest(scaleId){
-  currentScale = SCALES[scaleId];
-  currentAnswers = {};
-
-  document.getElementById('testTitleAr').textContent = currentScale.name;
-  document.getElementById('testTitleEn').textContent = currentScale.nameEn;
-  document.getElementById('patientName').value = '';
-  document.getElementById('patientId').value = '';
-  document.getElementById('assessDate').value = new Date().toISOString().slice(0,10);
-
-  renderItems();
-  updateProgress();
-
-  document.getElementById('view-home').classList.remove('active');
-  document.getElementById('view-test').classList.add('active');
-  window.scrollTo(0,0);
-}
-
-function closeTest(){
-  document.getElementById('view-test').classList.remove('active');
-  document.getElementById('view-home').classList.add('active');
-  renderRecordsTable();
-}
-
-function renderItems(){
-  const list = document.getElementById('itemList');
-  list.innerHTML = '';
-
-  currentScale.items.forEach((item, idx)=>{
-    const min = 0;
-    const max = item.max !== undefined ? item.max : currentScale.scoreRange[1];
-    const labels = [];
-    for(let s=min; s<=max; s++) labels.push(s);
-
-    const card = document.createElement('div');
-    card.className = 'item-card';
-    card.dataset.idx = idx;
-
-    let scaleHint = '';
-    if(currentScale.scoreRangeHint && idx===0){
-      scaleHint = `<div class="observer-note" style="color:var(--ink-soft);background:var(--paper-2);">${currentScale.scoreRangeHint}</div>`;
-    }
-
-    card.innerHTML = `
-      <div class="item-top">
-        <div class="item-num">${idx+1}</div>
-        <div class="item-text">
-          <p class="item-question">${item.q}</p>
-          <p class="item-original">${item.orig}</p>
+                <!-- Card 5: MSIS-29 -->
+                <div onclick="startTest('MSIS29')" class="glass-card rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group">
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="px-2.5 py-1 bg-rose-100 text-rose-800 text-xs font-bold rounded-full">Dual Transformed (0-100)</span>
+                            <i class="fa-solid fa-brain text-rose-500 group-hover:scale-110 transition"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">Multiple Sclerosis Impact Scale</h3>
+                        <p class="text-xs text-slate-500 mt-1">مقياس تأثير التصلب العصبي المتعدد (MSIS-29v2)</p>
+                        <p class="text-sm text-slate-600 mt-3">29 بنداً مقسمة إلى بُعد بدني (1-20) وبُعد نفسي (21-29).</p>
+                    </div>
+                    <div class="mt-5 pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-blue-600 font-semibold">
+                        <span>بدء التقييم</span>
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="scale-row" data-idx="${idx}">
-        ${labels.map(s=>`<button type="button" class="score-btn" data-score="${s}">${s}</button>`).join('')}
-      </div>
-      ${item.observer ? `<div class="observer-note">⚠ يُقيَّم بمعرفة الفاحص وليس بسؤال المريض مباشرة</div>` : ''}
-      ${idx===0 && currentScale.scoreRangeHint ? scaleHint : ''}
-    `;
-    list.appendChild(card);
-  });
 
-  list.querySelectorAll('.scale-row').forEach(row=>{
-    row.addEventListener('click', (e)=>{
-      const btn = e.target.closest('.score-btn');
-      if(!btn) return;
-      const idx = parseInt(row.getAttribute('data-idx'));
-      const score = parseInt(btn.getAttribute('data-score'));
-      currentAnswers[idx] = score;
+        <!-- ASSESSMENT FORM VIEW -->
+        <div id="view-assessment" class="view-panel hidden space-y-6">
+            <!-- Header bar for test -->
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <button onclick="showView('home')" class="text-slate-500 hover:text-slate-800 text-xs font-semibold mb-2 flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-right"></i> العودة للقائمة الرئيسية
+                    </button>
+                    <h2 id="activeTestTitle" class="text-xl sm:text-2xl font-bold text-slate-900"></h2>
+                    <p id="activeTestSubtitle" class="text-xs sm:text-sm text-slate-500"></p>
+                </div>
 
-      row.querySelectorAll('.score-btn').forEach(b=>b.classList.remove('selected'));
-      btn.classList.add('selected');
-      row.closest('.item-card').classList.add('answered');
+                <!-- Patient Meta Input -->
+                <div class="w-full md:w-auto bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-wrap gap-3 items-center">
+                    <div>
+                        <label for="patientField" class="block text-xs font-semibold text-slate-600 mb-1">اسم المريض أو معرّفه (ID) <span class="text-rose-600">*</span></label>
+                        <input type="text" id="patientField" required autocomplete="off" placeholder="مثال: P-1024 أو أحمد محمد"
+                               oninvalid="this.setCustomValidity('من فضلك أدخل اسم المريض أو معرّفه')" oninput="this.setCustomValidity('')"
+                               class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64">
+                    </div>
+                </div>
+            </div>
 
-      updateProgress();
-    });
-  });
-}
+            <!-- Dynamic Questions Form -->
+            <form id="assessmentForm" onsubmit="event.preventDefault(); submitAssessment();" class="space-y-4">
+                <!-- Questionnaire opening heading (stays visible while scrolling) -->
+                <div id="scaleIntro" class="hidden sticky top-[68px] z-40 bg-blue-900 text-white px-5 py-3 rounded-xl shadow-md border-r-4 border-amber-400">
+                    <p id="scaleIntroText" class="font-bold text-sm sm:text-base leading-relaxed"></p>
+                </div>
+                <div id="questionsContainer" class="space-y-4"></div>
 
-function updateProgress(){
-  const total = currentScale.items.length;
-  const answered = Object.keys(currentAnswers).length;
-  const pct = total ? (answered/total*100) : 0;
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('submitStatus').innerHTML = `<b>${answered}</b> من ${total} بندًا مُقيَّم`;
-  document.getElementById('submitBtn').disabled = answered < total;
-}
+                <!-- Submit Floating / Fixed Bar -->
+                <div class="bg-white p-4 rounded-xl shadow-lg border border-slate-200 sticky bottom-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div class="text-slate-700 text-sm font-semibold flex items-center gap-2">
+                        <span>الحالة:</span>
+                        <span id="completionStatus" class="text-amber-600 bg-amber-50 px-2 py-1 rounded text-xs">غير مكتمل</span>
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <button type="button" onclick="showView('home')" class="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition w-1/2 sm:w-auto">إلغاء</button>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow transition w-1/2 sm:w-auto flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-calculator"></i> حساب وحفظ المقياس
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
 
-function computeMax(){
-  return currentScale.items.reduce((sum,item)=> sum + (item.max !== undefined ? item.max : currentScale.scoreRange[1]), 0);
-}
+        <!-- RESULTS MODAL / VIEW -->
+        <div id="view-result" class="view-panel hidden space-y-6 max-w-2xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 sm:p-8 text-center space-y-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full text-3xl mb-2">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">تم تسجيل ونحفظ المقياس بنجاح</h2>
+                    <p class="text-sm text-slate-500">تمت إضافة البيانات إلى الخزن المحلي للفيزيائي/الباحث.</p>
+                </div>
 
-document.getElementById('submitBtn').addEventListener('click', ()=>{
-  const total = currentScale.items.length;
-  if(Object.keys(currentAnswers).length < total) return;
+                <!-- Score Summary Box -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 text-right space-y-3">
+                    <div class="flex justify-between border-b pb-2 border-slate-200 text-sm">
+                        <span class="text-slate-500">المريض:</span>
+                        <span id="resPatient" class="font-bold text-slate-800"></span>
+                    </div>
+                    <div class="flex justify-between border-b pb-2 border-slate-200 text-sm">
+                        <span class="text-slate-500">الاختبار:</span>
+                        <span id="resTest" class="font-bold text-slate-800"></span>
+                    </div>
+                    <div id="resScoreContainer" class="pt-2">
+                        <!-- Dynamic calculated scores go here -->
+                    </div>
+                </div>
 
-  const score = Object.values(currentAnswers).reduce((a,b)=>a+b, 0);
-  const maxScore = computeMax();
-  const interp = currentScale.interpret(score, total, maxScore);
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="showView('home')" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-sm transition">
+                        العودة للرئيسية
+                    </button>
+                    <button onclick="showView('records')" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition">
+                        عرض جميع السجلات
+                    </button>
+                </div>
+            </div>
+        </div>
 
-  const patientName = document.getElementById('patientName').value.trim();
-  const patientId = document.getElementById('patientId').value.trim();
-  const date = document.getElementById('assessDate').value || new Date().toISOString().slice(0,10);
+        <!-- STORED RECORDS VIEW -->
+        <div id="view-records" class="view-panel hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <button onclick="showView('home')" class="text-slate-500 hover:text-slate-800 text-xs font-semibold mb-2 flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-right"></i> العودة للقائمة الرئيسية
+                    </button>
+                    <h2 class="text-2xl font-bold text-slate-900">سجلات المرضى المخزنة</h2>
+                    <p class="text-xs text-slate-500">جميع المقاييس التي تم إجراؤها محفوظة في المتصفح المحالي (Local Storage).</p>
+                </div>
 
-  const record = {
-    date,
-    scaleId: currentScale.id,
-    scaleTag: currentScale.tag,
-    scaleName: currentScale.name,
-    patientName,
-    patientId,
-    score,
-    maxScore,
-    severityLabel: interp.label,
-    severityColor: interp.color,
-    answers: currentScale.items.map((item, idx)=>({
-      item: item.orig,
-      question: item.q,
-      score: currentAnswers[idx]
-    }))
-  };
-  addRecord(record);
-  showResult(record, interp);
-});
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="exportData('excel')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg shadow transition flex items-center gap-2">
+                        <i class="fa-solid fa-file-excel"></i> تصدير Excel
+                    </button>
+                    <button onclick="exportData('csv')" class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold rounded-lg shadow transition flex items-center gap-2">
+                        <i class="fa-solid fa-file-csv"></i> تصدير CSV
+                    </button>
+                    <button onclick="clearStorage()" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-semibold rounded-lg transition border border-rose-200">
+                        مسح الكل
+                    </button>
+                </div>
+            </div>
 
-/* ============================================================
-   RESULT MODAL
-   ============================================================ */
-let lastRecordForExport = null;
+            <!-- Filter / Search -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row gap-3 justify-between">
+                <input type="text" id="searchInput" oninput="renderRecordsTable()" placeholder="بحث بالاسم أو المعرّف..." class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-80">
+                <select id="filterTest" onchange="renderRecordsTable()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">جميع المقاييس</option>
+                    <option value="FSS">Fatigue Severity Scale (FSS)</option>
+                    <option value="HAMA">Hamilton Anxiety (HAM-A)</option>
+                    <option value="HAMD">Hamilton Depression (HAM-D)</option>
+                    <option value="MFIS">Modified Fatigue Impact (MFIS)</option>
+                    <option value="MSIS29">MS Impact Scale (MSIS-29)</option>
+                </select>
+            </div>
 
-function showResult(record, interp){
-  lastRecordForExport = record;
-  document.getElementById('resultTestName').textContent = record.scaleName;
-  document.getElementById('resultScore').textContent = record.score;
-  document.getElementById('resultScore').style.color = interp.color;
-  document.getElementById('resultMax').textContent = `من ${record.maxScore} · ${SCALES[record.scaleId].resultNote || ''}`;
-  document.getElementById('resultSeverity').textContent = interp.label;
-  document.getElementById('resultSeverity').style.background = `color-mix(in srgb, ${interp.color} 16%, transparent)`;
-  document.getElementById('resultSeverity').style.color = interp.color;
-  document.getElementById('resultPatient').textContent =
-    (record.patientName || 'بدون اسم') + (record.patientId ? ' · ' + record.patientId : '') + ' · ' + record.date;
+            <!-- Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+                <table class="w-full text-right text-sm">
+                    <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 text-xs font-bold uppercase">
+                        <tr>
+                            <th class="p-3.5">التاريخ والتوقيت</th>
+                            <th class="p-3.5">المريض (الاسم / المعرّف)</th>
+                            <th class="p-3.5">المقياس</th>
+                            <th class="p-3.5">النتيجة النهائية / التقييم</th>
+                            <th class="p-3.5 text-center">إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsTableBody" class="divide-y divide-slate-100">
+                        <!-- Rows injected dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-  document.getElementById('resultOverlay').classList.add('active');
-}
+    </main>
 
-document.getElementById('resultCloseBtn').addEventListener('click', ()=>{
-  document.getElementById('resultOverlay').classList.remove('active');
-  closeTest();
-});
+    <!-- RECORD DETAIL MODAL -->
+    <div id="recordModal" class="hidden fixed inset-0 z-[60] bg-slate-900/60 p-3 sm:p-6 flex items-start sm:items-center justify-center" onclick="if (event.target === this) closeRecordModal()">
+        <div class="modal-panel bg-white w-full max-w-4xl max-h-[92vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col" role="dialog" aria-modal="true" aria-labelledby="recordModalTitle">
+            <div class="flex items-start justify-between gap-3 p-4 sm:p-5 border-b border-slate-200">
+                <div>
+                    <h3 id="recordModalTitle" class="text-lg sm:text-xl font-bold text-slate-900"></h3>
+                    <p id="recordModalSubtitle" class="text-xs text-slate-500 mt-0.5"></p>
+                </div>
+                <div class="flex items-center gap-2 no-print">
+                    <button onclick="window.print()" class="px-3 py-1.5 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 flex items-center gap-1.5">
+                        <i class="fa-solid fa-print"></i> طباعة
+                    </button>
+                    <button onclick="closeRecordModal()" class="w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800" aria-label="إغلاق">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="recordModalBody" class="overflow-y-auto p-4 sm:p-5 space-y-5"></div>
+        </div>
+    </div>
 
-document.getElementById('resultExportBtn').addEventListener('click', ()=>{
-  if(lastRecordForExport) exportRecordsToCSV([lastRecordForExport], `${lastRecordForExport.scaleTag}_${lastRecordForExport.patientName || 'patient'}_${lastRecordForExport.date}`);
-});
+    <!-- Application JavaScript Engine -->
+    <script>
+        // ==========================================
+        // DATA STRUCTURES & SCALE DEFINITIONS
+        // ==========================================
 
-/* ============================================================
-   CSV EXPORT
-   ============================================================ */
-function csvEscape(val){
-  if(val === undefined || val === null) return '';
-  const s = String(val).replace(/"/g,'""');
-  return `"${s}"`;
-}
+        const SCALES_DATA = {
+            FSS: {
+                title: "Fatigue Severity Scale (FSS)",
+                subtitle: "مقياس شدة الإعياء - 9 بنود (نطاق الإجابة من 1 إلى 7)",
+                intro: "خلال الأسبوع الماضي وجدت أن:",
+                type: "mean",
+                options: [
+                    { val: 1, label: "1 - أرفض تماماً" },
+                    { val: 2, label: "2" },
+                    { val: 3, label: "3" },
+                    { val: 4, label: "4 - محايد" },
+                    { val: 5, label: "5" },
+                    { val: 6, label: "6" },
+                    { val: 7, label: "7 - أوافق تماماً" }
+                ],
+                items: [
+                    { id: "q1", original: "1. My motivation is lower when I am fatigued.\nدافعيتي لعمل الأشياء تكون أقل حينما أشعر بالإعياء.", direct: "هل الارهاق بيوصلك لمرحلة انك مش عايز تعمل حاجة" },
+                    { id: "q2", original: "2. Exercise brings on my fatigue.\nحينما أمارس الرياضة، أو أقوم بنشاط يسبب ذلك شعوراً بالإعياء.", direct: "بتتعب بسرعة لما تبدأ تتحرك او تعمل رياضة" },
+                    { id: "q3", original: "3. I am easily fatigued.\nأصاب بالإعياء بسهولة.", direct: "في العموم بتحس انك بقيت تتعب بسرعة من اقل حاجة" },
+                    { id: "q4", original: "4. Fatigue interferes with my physical functioning.\nالإعياء يقف في طريق ممارستي لوظائفي الجسدية.", direct: "هل الارهاق دا بيخليك مش عايز تعمل اي نشاط فيه حركة" },
+                    { id: "q5", original: "5. Fatigue causes frequent problems for me.\nالإعياء يسبب لي مشاكل عديدة ومتكررة.", direct: "هل الارهاق دا بيسببلك مشاكل في حياتك بشكل متكرر" },
+                    { id: "q6", original: "6. My fatigue prevents sustained physical functioning.\nالإعياء يمنعني من الاستمرار في عمل وظائفي الجسدية.", direct: "لما تكون بتعمل حاجة فيه حركة هل الارهاق بيخليك توقف بسرعة ومتقدرش تكمل لفترة طويلة" },
+                    { id: "q7", original: "7. Fatigue interferes with carrying out certain duties and responsibilities.\nالإعياء يقف في طريق تأديتي لواجباتي ومهمامي.", direct: "هل التعب دا بيعطلك كتير عن قضيان مصالحك والانشطة اللي انت متعود تعملها كل يوم" },
+                    { id: "q8", original: "8. Fatigue is among my three most disabling symptoms.\nالإعياء من أهم ثلاثة أعراض تتسبب في إعاقتي.", direct: "لو سألتك عن اكتر 3 اعراض بتعطلك عن حياتك هل الارهاق هيكون من الاعراض دي" },
+                    { id: "q9", original: "9. Fatigue interferes with my work, family, or social life.\nالإعياء يضايقني ويؤثر سلباً على عملي، عائلتي، أو حياتي الاجتماعية.", direct: "هل الارهاق بيأثر على شغلك وعيلتك وحياتك الاجتماعية" }
+                ]
+            },
 
-function exportRecordsToCSV(records, filename){
-  if(!records.length) return;
+            HAMA: {
+                title: "Hamilton Anxiety Rating Scale (HAM-A)",
+                subtitle: "مقياس هاملتون للقلق - 14 بنداً (نطاق الإجابة من 0 إلى 4)",
+                type: "sum",
+                options: [
+                    { val: 0, label: "0 - غير موجود" },
+                    { val: 1, label: "1 - خفيف" },
+                    { val: 2, label: "2 - متوسط" },
+                    { val: 3, label: "3 - شديد" },
+                    { val: 4, label: "4 - شديد جداً" }
+                ],
+                items: [
+                    { id: "q1", original: "1- مزاج قلق (Anxious mood): هموم، توقع الأسوأ، شعور بالخوف، تهيج.", direct: "هل بتحس بقلق طول الوقت ودايما بتتوقع الاسوء" },
+                    { id: "q2", original: "2- التوتر (Tension): مشاعر التوتر، تعب، إجفال، بكاء، عدم القدرة على الاسترخاء.", direct: "بتحس انك متوتر او اعصابك مشدودة" },
+                    { id: "q3", original: "3- المخاوف (Fears): من الظلام، الغرباء، الوحدة، الحيوانات، الحشود.", direct: "هل بقا عنك خوف من حاجات معينة زي الظلمة الناس الغريبة بشكل غير طبيعي" },
+                    { id: "q4", original: "4- الأرق (Insomnia): صعوبة النوم، نوم متقطع، تعب عند الاستيقاظ، كوابيس.", direct: "بتلاقي صعوبة ف انك تنام او بتصحى مرهق" },
+                    { id: "q5", original: "5- الحالة الذهنية (Intellectual): صعوبة التركيز وضعف الذاكرة.", direct: "عندك صعوبة ف التركيز ضعف في الذاكرة" },
+                    { id: "q6", original: "6- مزاج مكتئب (Depressed mood): فقدان الاهتمام، عدم المتعة، استيقاظ مبكر، تقلب المزاج.", direct: "بيجيلك اكتئاب او الحاجات اللي كنت بتحبها معدتش تبسطك" },
+                    { id: "q7", original: "7- حالة جسدية - عضلية (Somatic muscular): آلام، وخز، صلابة العضلات، ارتعاش.", direct: "بيجيلك شد عضلات تخشب او ارتعاش لارادي" },
+                    { id: "q8", original: "8- حالة جسدية - حسية (Somatic sensory): طنين، زغللة رؤية، هبات ساخنة/باردة، وخز.", direct: "بتحسي بطنين في ودنك - زغللة او مشكلة ف الرؤية" },
+                    { id: "q9", original: "9- أعراض القلب والأوعية (Cardiovascular): تسارع/عدم انتظام ضربات القلب، ألم الصدر، إغماء.", direct: "بتحس بضربات قلبك او بيجيلك الم في الصدر" },
+                    { id: "q10", original: "10- أعراض الجهاز التنفسي (Respiratory): ضغط بالصدر، اختناق، تنهد، ضيق تنفس.", direct: "بيجيلك صعوبة ف التنفس" },
+                    { id: "q11", original: "11- أعراض الجهاز الهضمي (Gastrointestinal): صعوبة بلع، آلام بطن، غثيان، اضطراب الأمعاء.", direct: "عندك مشاكل في المعدة: الم او احساس انك عايز ترجع , امساك او اسهال" },
+                    { id: "q12", original: "12- أعراض الجهاز التناسلي/البولي (Genitourinary): كثرة التبول، اضطراب الطمث، ضعف/فقدان الرغبة.", direct: "بتحتاج تدخل الحمام كتير فيه تغييرات في الدورة" },
+                    { id: "q13", original: "13- أعراض الجهاز العصبي الذاتي (Autonomic): جفاف الفم، تعرق، احمرار/شحوب الوجه، صداع.", direct: "بيجيلك صداع - بتعرق كتير ف اماكن مش بتبقى حر - حاسس ان ريقك ناشف" },
+                    { id: "q14", original: "14- السلوك خلال المقابلة (Behavior at interview): تململ، ارتعاش، تقطب الجبين، تنفس سريع.", direct: "(يتم تقييمه من خلال ملاحظة الفاحص لسلوك الشخص وتعبيراته أثناء الحديث دون سؤال مباشر)" }
+                ]
+            },
 
-  // Determine max number of item columns across records for this export
-  const maxItems = Math.max(...records.map(r => r.answers.length));
-  const headerBase = ['التاريخ','المقياس','رمز المقياس','اسم المريض','رقم الملف','النتيجة الكلية','الحد الأقصى','درجة الشدة'];
-  const itemHeaders = [];
-  for(let i=0;i<maxItems;i++) itemHeaders.push(`بند ${i+1}`);
+            HAMD: {
+                title: "Hamilton Depression Rating Scale (HAM-D)",
+                subtitle: "مقياس هاملتون للاكتئاب - 17 بنداً (تتراوح بين 0-4 و 0-2)",
+                type: "hamd_custom",
+                items: [
+                    { id: "q1", type: "0-4", original: "1. المزاج الاكتئابي: الابتئاس والغم والتشاؤم بشأن المستقبل، مشاعر الحزن، الرغبة في البكاء.", direct: "بتحس باكتئاب او تشاؤم معظم الوقت" },
+                    { id: "q2", type: "0-4", original: "2. تأنيب الضمير أو الشعور بالذنب: لوم النفس، أفكار بأنه مذنب وخاطئ، مرضه الحالي عقاب نزل به.", direct: "هل اوقات كتيرة بتحس بالذنب وتلوم نفسك" },
+                    { id: "q3", type: "0-4", original: "3. الانتحار: يشعر بأن الحياة لا تستحق العيش، يتمنى الموت، أفكار بشأن الانتحار، محاولات انتحار.", direct: "بتجيلك افكار عن الموت او الانتحار" },
+                    { id: "q4", type: "0-4", original: "4. العمل واهتمامات الحياة: مشاعر بالعجز وعدم القدرة وفتور الهمة، غير حاسم، فقدان الاهتمام بأي هوايات.", direct: "معدتش عايز تشتغل او تخرج ومعندكش حافز تعمل حاجة" },
+                    { id: "q5", type: "0-4", original: "5. التكاسل والتثاقل: بطء التفكير والكلام والنشاط، اللامبالاة والذهول.", direct: "بتحس بكسل , تفكيرك او كلامك بقا بطيئ" },
+                    { id: "q6", type: "0-4", original: "6. القلق النفسي: التوتر وسهولة الاستثارة، الانشغال والقلق بالأمور التافهة، التوجس وتوقع الشر.", direct: "في قلق مستمر وتوتر من حاجات بسيطة المفروض متقلقش منها" },
+                    { id: "q7", type: "0-4", original: "7. القلق الجسمي: أعراض معدية معوية (أرياح وعسر هضم)، قلبية (خفقان وصداع)، تنفسية.", direct: "هل القلق بيظهر على جسمك زي سرعة ضربات القلب, الم في المعدة, صداع" },
+                    { id: "q8", type: "0-4", original: "8. توهم المرض: الانشغال الزائد بالجسم، الانشغال بالصحة، ضلالات بشأن الاصابة بالأمراض.", direct: "بقيت بتقلق كتير يخصوص صحتك وبتتوهم الامراض" },
+                    { id: "q9", type: "0-2", original: "9. الأرق في بداية الليل", direct: "بتلاقي صعوبة انك تنام" },
+                    { id: "q10", type: "0-2", original: "10. الأرق في منتصف الليل", direct: "بتصحى كتير بالليل" },
+                    { id: "q11", type: "0-2", original: "11. الأرق حتى ساعة متأخرة من الليل", direct: "بتصحى بدري ومتقدرش تنام تاني" },
+                    { id: "q12", type: "0-2", original: "12. البلبلة والارتياع: عدم الاستقرار (فرك الأيدي والتمشي جيئة وذهابا)", direct: "هل التوتر بيخلي جسمك مش على بعضه عمال تحرك ف ايديك او تروح وتيجي" },
+                    { id: "q13", type: "0-2", original: "13. أعراض جسمية معدية: فقدان الشهية، الإحساس بثقل في البطن، الامساك", direct: "عندك مشاكل في الشهية, المعدة, امساك او اسهال" },
+                    { id: "q14", type: "0-2", original: "14. أعراض جسمية عامة: ثقل في الأطراف أو الظهر أو الرأس، آلام غير محددة في الظهر، فقدان الحيوية", direct: "بتحس بتقل في جسمك : راسك, ايديك او رجليك" },
+                    { id: "q15", type: "0-2", original: "15. أعراض جنسية: فقدان الرغبة الجنسية، اضطرابات الطمث", direct: "عندك مشاكل جنسية أو مشاكل في الدورة" },
+                    { id: "q16", type: "0-2", original: "16. الاستبصار (Insight): 0=لم يفقد استبصاره، 1=فاقد جزئياً، 2=فاقد للاستبصار", direct: "(ملاحظة الطبيب المعالج: هل المريض مدرك أنه مريض)" },
+                    { id: "q17", type: "0-2", original: "17. نقص الوزن", direct: "ملاحظ نزول في وزنك بدون ما تحاول تخس" }
+                ]
+            },
 
-  const header = [...headerBase, ...itemHeaders];
-  const lines = [header.map(csvEscape).join(',')];
+            MFIS: {
+                title: "Modified Fatigue Impact Scale (MFIS)",
+                subtitle: "مقياس تأثير الإعياء المعدل - 21 بنداً (نطاق الإجابة من 0 إلى 4)",
+                intro: "بسبب إرهاقي خلال الأسابيع الـ4 الماضية:",
+                type: "sum",
+                options: [
+                    { val: 0, label: "0 - أبداً (Never)" },
+                    { val: 1, label: "1 - نادراً (Rarely)" },
+                    { val: 2, label: "2 - أحياناً (Sometimes)" },
+                    { val: 3, label: "3 - غالباً (Often)" },
+                    { val: 4, label: "4 - معظم الوقت (Most of time)" }
+                ],
+                items: [
+                    { id: "q1", original: "1. كنت أقل انتباهًا.", direct: "تركيزك كان ضعيف" },
+                    { id: "q2", original: "2. واجهت صعوبة في التركيز والانتباه لفترات طويلة.", direct: "مش بتقدر تفضل مركز لفترة طويلة" },
+                    { id: "q3", original: "3. كنت غير قادر على التفكير بوضوح.", direct: "تفكيرك مشوش مش بتقدر تفكر بوضوح" },
+                    { id: "q4", original: "4. كنت غير متزن في حركتي وأجد صعوبة في تناسق حركاتي.", direct: "فيه عدم اتزان ف حركتك بتحس انك هتقع انت وبتتحرك" },
+                    { id: "q5", original: "5. كنت كثير النسيان.", direct: "بتنسى كتير" },
+                    { id: "q6", original: "6. كان عليّ أن أكون حذرًا في أنشطتي البدنية المعتادة في حياتي اليومية.", direct: "بتحس ان اي نشاط فيه حركة او مجهود بيبقا تقيل على قلبك وبتقعد تفكر كذا مرة قبل ما تعمله" },
+                    { id: "q7", original: "7. كنت أقل حماسًا للقيام بأي شيء يتطلب مجهودًا بدنيًا.", direct: "معندكش حماس انك تعمل اي حاجة فيه مجهود بدني" },
+                    { id: "q8", original: "8. كنت أقل حماسًا للمشاركة في الأنشطة الإجتماعية المعتادة مع الآخرين.", direct: "معندكش حماس انك تخرج او تتعامل مع الناس" },
+                    { id: "q9", original: "9. كانت قدرتي على القيام بأي شيء خارج المنزل محدودة.", direct: "كنت بتلاقي صعوبة انك تقضي مشوار او اي حاجة برا البيت" },
+                    { id: "q10", original: "10. كان من الصعب عليّ مواصلة مجهود النشاط الروتيني لفترات طويلة.", direct: "الانشطة والحاجات اللي كنت متعود تعملها كل يوم دلوقتي بقت صعب انك تعملها لفترة" },
+                    { id: "q11", original: "11. كان من الصعب عليّ اتخاذ القرارات.", direct: "بتلاقي صعوبة انك تاخد قرار وبتفضل متردد" },
+                    { id: "q12", original: "12. كنت أقل حماسًا للقيام بأي شيء يتطلب التفكير.", direct: "معندكش حماس انك تعمل اي حاجة فيها تفكير" },
+                    { id: "q13", original: "13. كان من الصعب عليّ إنجاز المهام التي تتطلب تفكيرًا.", direct: "بتلاقي صعوبة انك تخلص المهام اللي محتاجة تفكير" },
+                    { id: "q14", original: "14. شعرت بعدم راحة بدنية.", direct: "حاسس ان جسمك تعبان عموما" },
+                    { id: "q15", original: "15. شعرت بضعف في عضلاتي.", direct: "حاسس بضعف ف العضلات" },
+                    { id: "q16", original: "16. كان من الصعب عليّ ترتيب أفكاري عند القيام بأشياء في البيت أو العمل.", direct: "بتلاقي صعوبة ف ترتيب افكارك لما بيكون مطلوب منك تنجز حاجة" },
+                    { id: "q17", original: "17. كانت قدرتي أقل على إنجاز المهام التي تتطلب مجهودًا بدنيًا.", direct: "مكنتش قادر تنجز المهام اللي محتاجة مجهود بدني" },
+                    { id: "q18", original: "18. أصبحت أفكر بشكل أبطأ.", direct: "تفكير بقا بطيئ" },
+                    { id: "q19", original: "19. كنت أجد صعوبة في التركيز.", direct: "كان عندك صعوبة ف التركيز" },
+                    { id: "q20", original: "20. قمت بتقليل أنشطتي البدنية.", direct: "قللت الانشطة اللي فيه حركة واللي كنت متعود تعملها" },
+                    { id: "q21", original: "21. احتجت إلى الراحة أكثر أو لفترات أطول.", direct: "بتبقى محتاج ترتاح لفترات طويلة اكتر من الاول" }
+                ]
+            },
 
-  records.forEach(r=>{
-    const base = [r.date, r.scaleName, r.scaleTag, r.patientName, r.patientId, r.score, r.maxScore, r.severityLabel];
-    const itemVals = [];
-    for(let i=0;i<maxItems;i++){
-      itemVals.push(r.answers[i] !== undefined ? r.answers[i].score : '');
-    }
-    lines.push([...base, ...itemVals].map(csvEscape).join(','));
-  });
+            MSIS29: {
+                title: "Multiple Sclerosis Impact Scale 29 (MSIS-29v2)",
+                subtitle: "مقياس تأثير التصلب المتعدد - 29 بنداً (تحويل محسب 0-100 للمجال البدني والنفسي)",
+                intro: "خلال الأيام الـ 14 الأخيرة، إلى أي درجة قيّد مرض التصلب العصبي المتعدد قدرتك على...",
+                type: "msis29_dual",
+                options: [
+                    { val: 1, label: "1 - تمتماً" },
+                    { val: 2, label: "2 - قليلاً" },
+                    { val: 3, label: "3 - باعتدال" },
+                    { val: 4, label: "4 - بشكل شديد" }
+                ],
+                items: [
+                    // Physical Subscale (1-20)
+                    { id: "q1", category: "physical", text: "1. القيام بمهام تتطلب مجهوداً جسدياً؟" },
+                    { id: "q2", category: "physical", text: "2. القبض على الأشياء بشدة (مثلاً: فتح حنفية ماء)؟" },
+                    { id: "q3", category: "physical", text: "3. حمل الأشياء؟" },
+                    { id: "q4", category: "physical", text: "4. مشاكل في توازنك؟" },
+                    { id: "q5", category: "physical", text: "5. صعوبات في التنقل داخل البيت؟" },
+                    { id: "q6", category: "physical", text: "6. عدم تناسق في الحركات؟" },
+                    { id: "q7", category: "physical", text: "7. التصلب؟" },
+                    { id: "q8", category: "physical", text: "8. الشعور بأن ذراعيك و/أو قدميك ثقيلتان؟" },
+                    { id: "q9", category: "physical", text: "9. رجفة في ذراعيك و/أو قدميك؟" },
+                    { id: "q10", category: "physical", text: "10. تشنجات بذراعيك و/أو قدميك؟" },
+                    { id: "q11", category: "physical", text: "11. عدم استجابة جسمك لما تريد أن تفعله؟" },
+                    { id: "q12", category: "physical", text: "12. اضطرارك إلى الاعتماد على الآخرين لمساعدتك؟" },
+                    { id: "q13", category: "physical", text: "13. محدودية نشاطاتك الاجتماعية والنشاطات وقت الفراغ في البيت؟" },
+                    { id: "q14", category: "physical", text: "14. كونك مضطراً للبقاء في البيت أكثر مما ترغب؟" },
+                    { id: "q15", category: "physical", text: "15. صعوبات في استعمال يديك للقيام بمهمتك اليومية؟" },
+                    { id: "q16", category: "physical", text: "16. اضطرارك لتقليل الوقت الذي تقضيه في عملك أو نشاطاتك اليومية الأخرى؟" },
+                    { id: "q17", category: "physical", text: "17. مشاكل في استخدام وسائل النقل (السيارة، الباص، القطار، إلخ)؟" },
+                    { id: "q18", category: "physical", text: "18. كونك تأخذ وقتاً أطول للقيام بالأشياء؟" },
+                    { id: "q19", category: "physical", text: "19. صعوبة في القيام بالأشياء بشكل تلقائي (كالخروج دون تخطيط مسبق)؟" },
+                    { id: "q20", category: "physical", text: "20. الذهاب إلى الحمام بشكل طارئ للتبول؟" },
 
-  const csvContent = '\uFEFF' + lines.join('\r\n'); // BOM for Excel Arabic support
-  const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${filename}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('تم تصدير الملف');
-}
+                    // Psychological Subscale (21-29)
+                    { id: "q21", category: "psychological", text: "21. الشعور بأنك لست على ما يرام؟" },
+                    { id: "q22", category: "psychological", text: "22. مشاكل في النوم؟" },
+                    { id: "q23", category: "psychological", text: "23. الشعور بإنهاك ذهني؟" },
+                    { id: "q24", category: "psychological", text: "24. معاناة متعلقة بالتصلب العصبي المتعدد لديك؟" },
+                    { id: "q25", category: "psychological", text: "25. شعورك بالقلق أو التوتر؟" },
+                    { id: "q26", category: "psychological", text: "26. شعورك بأنك سريع الغضب والعصبية، قليل الصبر أو تنزعج بسهولة؟" },
+                    { id: "q27", category: "psychological", text: "27. مشاكل في التركيز؟" },
+                    { id: "q28", category: "psychological", text: "28. شعورك بعدم الثقة؟" },
+                    { id: "q29", category: "psychological", text: "29. شعورك بالاكتئاب؟" }
+                ]
+            }
+        };
 
-document.getElementById('exportAllBtn').addEventListener('click', ()=>{
-  const records = loadRecords();
-  if(!records.length) return;
-  exportRecordsToCSV(records, `سجلات_المقاييس_${new Date().toISOString().slice(0,10)}`);
-});
+        let activeTestKey = null;
 
-document.getElementById('clearAllBtn').addEventListener('click', ()=>{
-  if(!confirm('هل أنت متأكد من حذف جميع السجلات المحفوظة؟ لا يمكن التراجع عن هذا الإجراء.')) return;
-  saveRecords([]);
-  renderRecordsTable();
-  showToast('تم حذف جميع السجلات');
-});
+        // HAM-D answer options depend on the item type (0-4 or 0-2)
+        const HAMD_OPTIONS = {
+            "0-4": [
+                { val: 0, label: "0 - غير موجود" },
+                { val: 1, label: "1 - طفيف" },
+                { val: 2, label: "2 - متوسط" },
+                { val: 3, label: "3 - شديد" },
+                { val: 4, label: "4 - شديد جداً" }
+            ],
+            "0-2": [
+                { val: 0, label: "0 - غائب/طبيعي" },
+                { val: 1, label: "1 - خفيف/جزئي" },
+                { val: 2, label: "2 - واضح/كامل" }
+            ]
+        };
 
-/* ============================================================
-   NAV / THEME / TOAST
-   ============================================================ */
-document.getElementById('backBtn').addEventListener('click', ()=>{
-  if(Object.keys(currentAnswers).length > 0){
-    if(!confirm('لديك إجابات لم تُحفظ. هل تريد الخروج بدون حفظ؟')) return;
-  }
-  closeTest();
-});
+        function getItemOptions(testKey, item) {
+            if (testKey === 'HAMD') return HAMD_OPTIONS[item.type];
+            return SCALES_DATA[testKey].options;
+        }
 
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(()=> t.classList.remove('show'), 2200);
-}
+        // Old records stored patientId + patientName separately; new ones store a single `patient` value
+        function getPatientLabel(r) {
+            if (r.patient) return r.patient;
+            const name = r.patientName && r.patientName !== '—' ? r.patientName : '';
+            const id = r.patientId && r.patientId !== 'Unspecified' ? r.patientId : '';
+            if (name && id) return `${name} (${id})`;
+            return name || id || '—';
+        }
 
-const themeToggle = document.getElementById('themeToggle');
-themeToggle.addEventListener('click', ()=>{
-  const cur = document.documentElement.getAttribute('data-theme');
-  const next = cur === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  try{ localStorage.setItem('scales_theme', next); }catch(e){}
-});
-(function initTheme(){
-  try{
-    const saved = localStorage.getItem('scales_theme');
-    if(saved) document.documentElement.setAttribute('data-theme', saved);
-  }catch(e){}
-})();
+        function escapeHTML(str) {
+            return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
 
-/* ============================================================
-   INIT
-   ============================================================ */
-renderTestGrid();
-renderRecordsTable();
-</script>
+        // ==========================================
+        // UI & NAVIGATION ENGINE
+        // ==========================================
+
+        // ---- Unsaved-data protection ----
+        let currentView = 'home';
+        let assessmentDirty = false;
+        const LEAVE_MSG = 'لديك إجابات لم يتم حفظها في هذا التقييم. إذا غادرت الآن ستفقد كل البيانات المُدخلة.\n\nهل تريد المغادرة وتجاهل البيانات؟';
+
+        function hasUnsavedAssessment() {
+            return currentView === 'assessment' && assessmentDirty;
+        }
+
+        function showView(viewName) {
+            // Confirm before leaving a partially filled assessment (Cancel, header links, etc.)
+            if (hasUnsavedAssessment() && viewName !== 'assessment') {
+                if (!confirm(LEAVE_MSG)) return false;
+                assessmentDirty = false;
+            }
+            currentView = viewName;
+            document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            
+            if (viewName === 'records') {
+                renderRecordsTable();
+            }
+            updateRecordCount();
+        }
+
+        function updateRecordCount() {
+            const records = JSON.parse(localStorage.getItem('clinical_assessments') || '[]');
+            document.getElementById('recordCount').innerText = records.length;
+        }
+
+        function startTest(testKey) {
+            activeTestKey = testKey;
+            const config = SCALES_DATA[testKey];
+
+            document.getElementById('activeTestTitle').innerText = config.title;
+            document.getElementById('activeTestSubtitle').innerText = config.subtitle;
+            document.getElementById('patientField').value = '';
+            assessmentDirty = false;
+
+            const introBox = document.getElementById('scaleIntro');
+            if (config.intro) {
+                document.getElementById('scaleIntroText').innerText = config.intro;
+                introBox.classList.remove('hidden');
+            } else {
+                introBox.classList.add('hidden');
+            }
+
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+
+            config.items.forEach((item, index) => {
+                const itemBox = document.createElement('div');
+                itemBox.className = "bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm space-y-3";
+
+                if (testKey === 'MSIS29') {
+                    const headerTag = item.category === 'physical' 
+                        ? `<span class="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded">المجال الجسدي Physical</span>` 
+                        : `<span class="px-2 py-0.5 bg-purple-50 text-purple-700 text-xs font-semibold rounded">المجال النفسي Psychological</span>`;
+
+                    itemBox.innerHTML = `
+                        <div class="flex justify-between items-start gap-2">
+                            <h4 class="font-bold text-slate-800 text-sm sm:text-base">${item.text}</h4>
+                            ${headerTag}
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                            ${config.options.map(opt => `
+                                <label class="flex items-center gap-2 p-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer text-xs sm:text-sm">
+                                    <input type="radio" name="${item.id}" value="${opt.val}" required class="text-blue-600 focus:ring-blue-500">
+                                    <span>${opt.label}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    `;
+                } else if (testKey === 'HAMD') {
+                    const options = getItemOptions('HAMD', item);
+
+                    itemBox.innerHTML = `
+                        <div>
+                            <span class="text-xs font-bold text-blue-600">البند ${index + 1}</span>
+                            <p class="font-bold text-slate-800 text-sm sm:text-base">${item.original}</p>
+                            ${item.direct ? `<p class="text-xs text-amber-800 bg-amber-50 p-2 rounded mt-1 border border-amber-100"><strong>سؤال المريض المباشر:</strong> ${item.direct}</p>` : ''}
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-${options.length} gap-2 pt-2">
+                            ${options.map(opt => `
+                                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer text-xs sm:text-sm">
+                                    <input type="radio" name="${item.id}" value="${opt.val}" required class="text-blue-600 focus:ring-blue-500">
+                                    <span>${opt.label}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    itemBox.innerHTML = `
+                        <div>
+                            <span class="text-xs font-bold text-blue-600">البند ${index + 1}</span>
+                            <p class="font-bold text-slate-800 text-sm whitespace-pre-line">${item.original}</p>
+                            ${item.direct ? `<p class="text-xs text-amber-800 bg-amber-50 p-2 rounded mt-1 border border-amber-100"><strong>سؤال التقييم المباشر:</strong> ${item.direct}</p>` : ''}
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-${config.options.length > 5 ? '7' : config.options.length} gap-2 pt-2">
+                            ${config.options.map(opt => `
+                                <label class="flex items-center justify-center gap-1 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer text-xs text-center">
+                                    <input type="radio" name="${item.id}" value="${opt.val}" required class="text-blue-600 focus:ring-blue-500">
+                                    <span>${opt.label}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                container.appendChild(itemBox);
+            });
+
+            showView('assessment');
+            // Add a history entry so the browser Back button can be intercepted while filling the form
+            history.pushState({ view: 'assessment' }, '');
+            document.getElementById('patientField').focus();
+        }
+
+        // ==========================================
+        // CALCULATION & STORAGE LOGIC
+        // ==========================================
+
+        function submitAssessment() {
+            const patientField = document.getElementById('patientField');
+            const patient = patientField.value.trim();
+            if (!patient) {
+                patientField.value = '';
+                patientField.setCustomValidity('من فضلك أدخل اسم المريض أو معرّفه');
+                patientField.reportValidity();
+                patientField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            const config = SCALES_DATA[activeTestKey];
+
+            const formData = new FormData(document.getElementById('assessmentForm'));
+            const responses = {};
+            let sum = 0;
+            let count = 0;
+
+            let physicalSum = 0;
+            let psychSum = 0;
+
+            config.items.forEach(item => {
+                const val = parseInt(formData.get(item.id) || 0);
+                responses[item.id] = val;
+                sum += val;
+                count++;
+
+                if (activeTestKey === 'MSIS29') {
+                    if (item.category === 'physical') physicalSum += val;
+                    if (item.category === 'psychological') psychSum += val;
+                }
+            });
+
+            let scoreResult = {};
+
+            if (activeTestKey === 'FSS') {
+                const mean = (sum / count).toFixed(2);
+                scoreResult = {
+                    displayScore: `${mean} / 7.0`,
+                    numericPrimary: parseFloat(mean),
+                    summary: `Mean Average: ${mean}`
+                };
+            } else if (activeTestKey === 'HAMA') {
+                let severity = "طبيعي/خفيف";
+                if (sum >= 25) severity = "شدة عالية (Severe)";
+                else if (sum >= 18) severity = "شدة متوسطة (Moderate)";
+                else if (sum >= 14) severity = "شدة خفيفة (Mild)";
+
+                scoreResult = {
+                    displayScore: `${sum} / 56`,
+                    numericPrimary: sum,
+                    summary: severity
+                };
+            } else if (activeTestKey === 'HAMD') {
+                let severity = "اكتئاب عادي (0-9)";
+                if (sum >= 39) severity = "اكتئاب شديد (39-50)";
+                else if (sum >= 26) severity = "اكتئاب متوسط (26-38)";
+                else if (sum >= 18) severity = "اكتئاب خفيف (18-25)";
+                else if (sum >= 10) severity = "اكتئاب شبه عادي (10-17)";
+
+                scoreResult = {
+                    displayScore: `${sum} / 52`,
+                    numericPrimary: sum,
+                    summary: severity
+                };
+            } else if (activeTestKey === 'MFIS') {
+                scoreResult = {
+                    displayScore: `${sum} / 84`,
+                    numericPrimary: sum,
+                    summary: `Total Score: ${sum}`
+                };
+            } else if (activeTestKey === 'MSIS29') {
+                // MSIS-29 Formula: ((sum - min) / (max - min)) * 100
+                const physTransformed = (((physicalSum - 20) / 60) * 100).toFixed(1);
+                const psychTransformed = (((psychSum - 9) / 27) * 100).toFixed(1);
+
+                scoreResult = {
+                    displayScore: `بدني: ${physTransformed}% | نفسي: ${psychTransformed}%`,
+                    numericPrimary: parseFloat(physTransformed),
+                    physTransformed: parseFloat(physTransformed),
+                    psychTransformed: parseFloat(psychTransformed),
+                    summary: `Physical: ${physTransformed}%, Psychological: ${psychTransformed}%`
+                };
+            }
+
+            // Record object
+            const record = {
+                id: 'REC_' + Date.now(),
+                timestamp: new Date().toLocaleString('ar-EG'),
+                patient: patient,
+                testKey: activeTestKey,
+                testName: config.title,
+                scoreResult: scoreResult,
+                itemResponses: responses
+            };
+
+            // Save to LocalStorage
+            const existing = JSON.parse(localStorage.getItem('clinical_assessments') || '[]');
+            existing.unshift(record);
+            localStorage.setItem('clinical_assessments', JSON.stringify(existing));
+
+            // Saved successfully: nothing left to lose
+            assessmentDirty = false;
+
+            // Show Result View
+            document.getElementById('resPatient').textContent = patient;
+            document.getElementById('resTest').textContent = config.title;
+
+            const resContainer = document.getElementById('resScoreContainer');
+            if (activeTestKey === 'MSIS29') {
+                resContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-3 text-center">
+                        <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                            <span class="block text-xs text-blue-600 font-bold">المجال الجسدي Transformed</span>
+                            <span class="text-2xl font-black text-blue-900">${scoreResult.physTransformed}%</span>
+                        </div>
+                        <div class="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                            <span class="block text-xs text-purple-600 font-bold">المجال النفسي Transformed</span>
+                            <span class="text-2xl font-black text-purple-900">${scoreResult.psychTransformed}%</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                resContainer.innerHTML = `
+                    <div class="text-center bg-blue-50 p-4 rounded-xl border border-blue-200">
+                        <span class="block text-xs text-blue-600 font-bold">النتيجة المحسوبة (Single Score)</span>
+                        <span class="text-3xl font-black text-blue-900 my-1 block">${scoreResult.displayScore}</span>
+                        <span class="text-xs font-semibold text-slate-600">${scoreResult.summary}</span>
+                    </div>
+                `;
+            }
+
+            showView('result');
+        }
+
+        // ==========================================
+        // RECORDS TABLE & EXPORT LOGIC
+        // ==========================================
+
+        function renderRecordsTable() {
+            const records = JSON.parse(localStorage.getItem('clinical_assessments') || '[]');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filterTest = document.getElementById('filterTest').value;
+
+            const tbody = document.getElementById('recordsTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = records.filter(r => {
+                const matchesSearch = getPatientLabel(r).toLowerCase().includes(search);
+                const matchesTest = !filterTest || r.testKey === filterTest;
+                return matchesSearch && matchesTest;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">لا توجد سجلات محفوظة مطابقة.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100 cursor-pointer";
+                tr.onclick = () => viewRecord(r.id);
+                tr.innerHTML = `
+                    <td class="p-3.5 text-xs text-slate-500">${escapeHTML(r.timestamp)}</td>
+                    <td class="p-3.5 font-bold text-slate-800">${escapeHTML(getPatientLabel(r))}</td>
+                    <td class="p-3.5"><span class="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-semibold">${escapeHTML(r.testName)}</span></td>
+                    <td class="p-3.5 font-bold text-blue-600">${escapeHTML(r.scoreResult.displayScore)}</td>
+                    <td class="p-3.5 text-center whitespace-nowrap">
+                        <button onclick="event.stopPropagation(); viewRecord('${r.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold px-2.5 py-1 rounded hover:bg-blue-50 border border-blue-100">
+                            <i class="fa-solid fa-eye"></i> عرض التفاصيل
+                        </button>
+                        <button onclick="event.stopPropagation(); deleteRecord('${r.id}')" class="text-rose-500 hover:text-rose-700 text-xs px-2 py-1 rounded hover:bg-rose-50" title="حذف">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Severity colour for an answer, based on its position within the option range
+        function severityClasses(val, options) {
+            const vals = options.map(o => o.val);
+            const min = Math.min(...vals), max = Math.max(...vals);
+            const ratio = max === min ? 0 : (val - min) / (max - min);
+            if (ratio === 0) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            if (ratio <= 0.34) return 'bg-lime-50 text-lime-700 border-lime-200';
+            if (ratio <= 0.67) return 'bg-amber-50 text-amber-700 border-amber-200';
+            return 'bg-rose-50 text-rose-700 border-rose-200';
+        }
+
+        function statBox(label, value, tone = 'blue') {
+            const tones = {
+                blue: 'bg-blue-50 border-blue-200 text-blue-900 text-blue-600',
+                purple: 'bg-purple-50 border-purple-200 text-purple-900 text-purple-600',
+                slate: 'bg-slate-50 border-slate-200 text-slate-900 text-slate-500'
+            }[tone].split(' ');
+            return `
+                <div class="${tones[0]} ${tones[1]} border rounded-xl p-3 text-center">
+                    <span class="block text-xs font-bold ${tones[3]}">${label}</span>
+                    <span class="block text-xl font-black ${tones[2]} mt-0.5">${value}</span>
+                </div>`;
+        }
+
+        function viewRecord(recId) {
+            const records = JSON.parse(localStorage.getItem('clinical_assessments') || '[]');
+            const r = records.find(x => x.id === recId);
+            if (!r) return;
+
+            const config = SCALES_DATA[r.testKey];
+            const responses = r.itemResponses || {};
+            const items = config ? config.items : [];
+
+            document.getElementById('recordModalTitle').innerText = r.testName;
+            document.getElementById('recordModalSubtitle').innerText = r.timestamp;
+
+            // --- Patient info ---
+            let html = `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex justify-between gap-2 text-sm">
+                    <span class="text-slate-500">المريض (الاسم / المعرّف)</span>
+                    <span class="font-bold text-slate-800">${escapeHTML(getPatientLabel(r))}</span>
+                </div>`;
+
+            // --- Score summary (recomputed raw sums shown next to the stored result) ---
+            const rawSum = items.reduce((t, it) => t + (Number.isFinite(responses[it.id]) ? responses[it.id] : 0), 0);
+            let stats = '';
+            if (r.testKey === 'MSIS29') {
+                const physRaw = items.filter(i => i.category === 'physical').reduce((t, i) => t + (responses[i.id] || 0), 0);
+                const psyRaw = items.filter(i => i.category === 'psychological').reduce((t, i) => t + (responses[i.id] || 0), 0);
+                stats = statBox('المجال الجسدي (0-100)', `${r.scoreResult.physTransformed}%`, 'blue')
+                      + statBox('المجال الجسدي - مجموع خام', `${physRaw} / 80`, 'slate')
+                      + statBox('المجال النفسي (0-100)', `${r.scoreResult.psychTransformed}%`, 'purple')
+                      + statBox('المجال النفسي - مجموع خام', `${psyRaw} / 36`, 'slate');
+            } else {
+                stats = statBox('النتيجة النهائية', escapeHTML(r.scoreResult.displayScore), 'blue')
+                      + statBox('التفسير', escapeHTML(r.scoreResult.summary), 'slate')
+                      + statBox('المجموع الخام', rawSum, 'slate');
+            }
+            html += `<div class="grid grid-cols-2 ${r.testKey === 'MSIS29' ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3">${stats}</div>`;
+
+            // --- Questionnaire opening heading ---
+            if (config && config.intro) {
+                html += `
+                    <div class="bg-blue-900 text-white px-4 py-3 rounded-xl border-r-4 border-amber-400 font-bold text-sm leading-relaxed">
+                        ${escapeHTML(config.intro)}
+                    </div>`;
+            }
+
+            // --- Item-by-item answers ---
+            if (!config) {
+                html += `<p class="text-sm text-slate-500">لا يمكن عرض البنود: المقياس غير معروف.</p>`;
+            } else {
+                const rows = items.map((item, idx) => {
+                    const options = getItemOptions(r.testKey, item);
+                    const val = responses[item.id];
+                    const opt = options.find(o => o.val === val);
+                    const answered = opt !== undefined;
+                    const question = item.original || item.text;
+                    const badge = answered
+                        ? `<span class="inline-block px-2 py-1 rounded-lg border text-xs font-bold ${severityClasses(val, options)}">${escapeHTML(opt.label)}</span>`
+                        : `<span class="text-xs text-slate-400">لم تتم الإجابة</span>`;
+                    const tag = r.testKey === 'MSIS29'
+                        ? (item.category === 'physical'
+                            ? `<span class="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-semibold rounded">جسدي</span>`
+                            : `<span class="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-semibold rounded">نفسي</span>`)
+                        : '';
+                    const direct = item.direct
+                        ? `<p class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded p-1.5 mt-1.5"><strong>السؤال المباشر:</strong> ${escapeHTML(item.direct)}</p>` : '';
+                    return `
+                        <tr class="align-top border-b border-slate-100">
+                            <td class="p-2.5 text-xs font-bold text-blue-600 w-10">${idx + 1}</td>
+                            <td class="p-2.5">
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="text-sm text-slate-800 whitespace-pre-line">${escapeHTML(question)}</p>
+                                    ${tag}
+                                </div>
+                                ${direct}
+                            </td>
+                            <td class="p-2.5 text-center whitespace-nowrap">${badge}</td>
+                            <td class="p-2.5 text-center font-black text-slate-800 w-12">${answered ? val : '—'}</td>
+                        </tr>`;
+                }).join('');
+
+                html += `
+                    <div class="border border-slate-200 rounded-xl overflow-x-auto">
+                        <table class="w-full text-right">
+                            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 text-xs font-bold">
+                                <tr>
+                                    <th class="p-2.5">#</th>
+                                    <th class="p-2.5">البند</th>
+                                    <th class="p-2.5 text-center">الإجابة</th>
+                                    <th class="p-2.5 text-center">الدرجة</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>`;
+            }
+
+            document.getElementById('recordModalBody').innerHTML = html;
+            document.getElementById('recordModal').classList.remove('hidden');
+            document.getElementById('recordModalBody').scrollTop = 0;
+        }
+
+        function closeRecordModal() {
+            document.getElementById('recordModal').classList.add('hidden');
+        }
+
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRecordModal(); });
+
+        function deleteRecord(recId) {
+            if (!confirm('هل أنت تأكد من حذف هذا السجل؟')) return;
+            let records = JSON.parse(localStorage.getItem('clinical_assessments') || '[]');
+            records = records.filter(r => r.id !== recId);
+            localStorage.setItem('clinical_assessments', JSON.stringify(records));
+            renderRecordsTable();
+            updateRecordCount();
+        }
+
+        function clearStorage() {
+            if (!confirm('تحذير: هل أنت متاكد من مسح جميع السجلات المخزنة تماماً؟')) return;
+            localStorage.removeItem('clinical_assessments');
+            renderRecordsTable();
+            updateRecordCount();
+        }
+
+        function exportData(format) {
+            const records = JSON.parse(localStorage.getItem('clinical_assessments') || '[]');
+            if (records.length === 0) {
+                alert('لا توجد بيانات للتصدير.');
+                return;
+            }
+
+            // Flatten data for export tabular structure
+            const exportRows = records.map(r => {
+                const flat = {
+                    "Record_ID": r.id,
+                    "Timestamp": r.timestamp,
+                    "Patient": getPatientLabel(r),
+                    "Test_Key": r.testKey,
+                    "Test_Name": r.testName,
+                    "Final_Score_Display": r.scoreResult.displayScore,
+                    "Numeric_Primary_Score": r.scoreResult.numericPrimary,
+                    "Summary_Interpretation": r.scoreResult.summary
+                };
+
+                // Add item-level responses as separate columns
+                Object.keys(r.itemResponses).forEach(qKey => {
+                    flat[`Item_${qKey}`] = r.itemResponses[qKey];
+                });
+
+                return flat;
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(exportRows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Assessments");
+
+            if (format === 'excel') {
+                XLSX.writeFile(workbook, `Clinical_Assessments_Export_${Date.now()}.xlsx`);
+            } else if (format === 'csv') {
+                XLSX.writeFile(workbook, `Clinical_Assessments_Export_${Date.now()}.csv`, { bookType: 'csv' });
+            }
+        }
+
+        // ==========================================
+        // ACCIDENTAL RELOAD / BACK PROTECTION
+        // ==========================================
+
+        // Any typing or answer inside the assessment marks it as having unsaved data
+        const assessmentPanel = document.getElementById('view-assessment');
+        ['input', 'change'].forEach(evt => assessmentPanel.addEventListener(evt, () => { assessmentDirty = true; }));
+
+        // Reload, close tab, or navigate away: browser shows its native "Leave site?" prompt
+        window.addEventListener('beforeunload', e => {
+            if (hasUnsavedAssessment()) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        // Browser Back button (and mobile back gesture)
+        window.addEventListener('popstate', () => {
+            if (currentView !== 'assessment') return;
+            if (hasUnsavedAssessment()) {
+                if (!confirm(LEAVE_MSG)) {
+                    history.pushState({ view: 'assessment' }, ''); // stay: restore the entry Back just consumed
+                    return;
+                }
+                assessmentDirty = false;
+            }
+            showView('home');
+        });
+
+        // Initialize App
+        history.replaceState({ view: 'home' }, '');
+        updateRecordCount();
+    </script>
 </body>
 </html>
