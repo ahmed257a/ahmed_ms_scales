@@ -145,6 +145,22 @@
                         <i class="fa-solid fa-arrow-left"></i>
                     </div>
                 </div>
+                <!-- Card 6: MSQOL-54 -->
+                <div onclick="startTest('MSQOL54')" class="glass-card rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group">
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="px-2.5 py-1 bg-teal-100 text-teal-800 text-xs font-bold rounded-full">12 Subscales + 2 Composites (0-100)</span>
+                            <i class="fa-solid fa-face-smile text-teal-500 group-hover:scale-110 transition"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">MS Quality of Life</h3>
+                        <p class="text-xs text-slate-500 mt-1">MSQOL-54</p>
+                        <p class="text-sm text-slate-600 mt-3">54 items measuring health-related quality of life in MS: 12 subscales plus Physical and Mental Health composites.</p>
+                    </div>
+                    <div class="mt-5 pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-blue-600 font-semibold">
+                        <span>بدء التقييم</span>
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -266,6 +282,7 @@
                     <option value="HAMD">Hamilton Depression (HAM-D)</option>
                     <option value="MFIS">Modified Fatigue Impact (MFIS)</option>
                     <option value="MSIS29">MS Impact Scale (MSIS-29)</option>
+                    <option value="MSQOL54">MS Quality of Life (MSQOL-54)</option>
                 </select>
             </div>
 
@@ -484,6 +501,291 @@
             }
         };
 
+        // ==========================================
+        // MSQOL-54 (Vickrey et al., 1995) - (c) 1995 University of California, Los Angeles
+        // Each item is recoded to 0-100 (higher = better); subscale = mean of answered items;
+        // composites = weighted sums of subscales (weights from the MSQOL-54 scoring manual).
+        // ==========================================
+        const _T6 = [["All of the time"],["Most of the time"],["A good bit of the time"],["Some of the time"],["A little of the time"],["None of the time"]];
+        const _TF = [["Definitely true"],["Mostly true"],["Not sure"],["Mostly false"],["Definitely false"]];
+        const _EX = [["Not at all"],["Slightly"],["Moderately"],["Quite a bit"],["Extremely"]];
+        const MSQ_SETS = {
+            gen:  { o: [["Excellent"],["Very good"],["Good"],["Fair"],["Poor"]], s: [100,75,50,25,0] },
+            chg:  { o: [["Much better now than one year ago"],["Somewhat better now"],["About the same"],["Somewhat worse now"],["Much worse now than one year ago"]], s: [100,75,50,25,0] },
+            lim3: { o: [["Yes, limited a lot"],["Yes, limited a little"],["No, not limited at all"]], s: [0,50,100] },
+            yn:   { o: [["Yes"],["No"]], s: [0,100] },
+            ext5: { o: _EX, s: [100,75,50,25,0] },
+            int5: { o: [["Not at all"],["A little bit"],["Moderately"],["Quite a bit"],["Extremely"]], s: [100,75,50,25,0] },
+            pain6:{ o: [["None"],["Very mild"],["Mild"],["Moderate"],["Severe"],["Very severe"]], s: [100,80,60,40,20,0] },
+            tp:   { o: _T6, s: [100,80,60,40,20,0] },   // positively worded (pep, calm, energy, happy, rested)
+            tn:   { o: _T6, s: [0,20,40,60,80,100] },   // negatively worded (nervous, down, tired, distress, cognitive...)
+            time5:{ o: [["All of the time"],["Most of the time"],["Some of the time"],["A little of the time"],["None of the time"]], s: [0,25,50,75,100] },
+            tfa:  { o: _TF, s: [0,25,50,75,100] },       // reverse-keyed statements (34, 36)
+            tfb:  { o: _TF, s: [100,75,50,25,0] },
+            prob4:{ o: [["Not a problem"],["A little of a problem"],["Somewhat of a problem"],["Very much a problem"]], s: [100,66.7,33.3,0] },
+            sat5: { o: [["Very satisfied"],["Somewhat satisfied"],["Neither satisfied nor dissatisfied"],["Somewhat dissatisfied"],["Very dissatisfied"]], s: [100,75,50,25,0] },
+            life7:{ o: [["Terrible"],["Unhappy"],["Mostly dissatisfied"],["Mixed - about equally satisfied and dissatisfied"],["Mostly satisfied"],["Pleased"],["Delighted"]], s: [0,16.7,33.3,50,66.7,83.3,100] },
+            q10:  { o: [0,1,2,3,4,5,6,7,8,9,10].map(i => [String(i)]), s: [0,10,20,30,40,50,60,70,80,90,100], zero: true }
+        };
+
+        const MSQ_ITEMS = [
+            ["In general, would you say your health is:", "gen"],
+            ["Compared to one year ago, how would you rate your health in general now?", "chg"],
+            ["Vigorous activities, such as running, lifting heavy objects, participating in strenuous sports", "lim3"],
+            ["Moderate activities, such as moving a table, pushing a vacuum cleaner, bowling, or playing golf", "lim3"],
+            ["Lifting or carrying groceries", "lim3"],
+            ["Climbing several flights of stairs", "lim3"],
+            ["Climbing one flight of stairs", "lim3"],
+            ["Bending, kneeling, or stooping", "lim3"],
+            ["Walking more than a mile", "lim3"],
+            ["Walking several blocks", "lim3"],
+            ["Walking one block", "lim3"],
+            ["Bathing and dressing yourself", "lim3"],
+            ["Cut down on the amount of time you could spend on work or other activities", "yn"],
+            ["Accomplished less than you would like", "yn"],
+            ["Were limited in the kind of work or other activities", "yn"],
+            ["Had difficulty performing the work or other activities (for example, it took extra effort)", "yn"],
+            ["Cut down on the amount of time you could spend on work or other activities", "yn"],
+            ["Accomplished less than you would like", "yn"],
+            ["Didn't do work or other activities as carefully as usual", "yn"],
+            ["During the past 4 weeks, to what extent has your physical health or emotional problems interfered with your normal social activities with family, friends, neighbors, or groups?", "ext5"],
+            ["How much bodily pain have you had during the past 4 weeks?", "pain6"],
+            ["During the past 4 weeks, how much did pain interfere with your normal work (including both work outside the home and housework)?", "int5"],
+            ["Did you feel full of pep?", "tp"],
+            ["Have you been a very nervous person?", "tn"],
+            ["Have you felt so down in the dumps that nothing could cheer you up?", "tn"],
+            ["Have you felt calm and peaceful?", "tp"],
+            ["Did you have a lot of energy?", "tp"],
+            ["Have you felt downhearted and blue?", "tn"],
+            ["Did you feel worn out?", "tn"],
+            ["Have you been a happy person?", "tp"],
+            ["Did you feel tired?", "tn"],
+            ["Did you feel rested on waking in the morning?", "tp"],
+            ["During the past 4 weeks, how much of the time has your physical health or emotional problems interfered with your social activities (like visiting with friends, relatives, etc.)?", "time5"],
+            ["I seem to get sick a little easier than other people", "tfa"],
+            ["I am as healthy as anybody I know", "tfb"],
+            ["I expect my health to get worse", "tfa"],
+            ["My health is excellent", "tfb"],
+            ["Were you discouraged by your health problems?", "tn"],
+            ["Were you frustrated about your health?", "tn"],
+            ["Was your health a worry in your life?", "tn"],
+            ["Did you feel weighed down by your health problems?", "tn"],
+            ["Have you had difficulty concentrating and thinking?", "tn"],
+            ["Did you have trouble keeping your attention on an activity for long?", "tn"],
+            ["Have you had trouble with your memory?", "tn"],
+            ["Have others, such as family members or friends, noticed that you have trouble with your memory or problems with your concentration?", "tn"],
+            ["Lack of sexual interest", "prob4"],
+            ["Difficulty getting or keeping an erection (men) / Inadequate lubrication (women)", "prob4"],
+            ["Difficulty having orgasm", "prob4"],
+            ["Ability to satisfy sexual partner", "prob4"],
+            ["Overall, how satisfied were you with your sexual function during the past 4 weeks?", "sat5"],
+            ["During the past 4 weeks, to what extent have problems with your bowel or bladder function interfered with your normal social activities with family, friends, neighbors, or groups?", "ext5"],
+            ["During the past 4 weeks, how much did pain interfere with your enjoyment of life?", "ext5"],
+            ["Overall, how would you rate your own quality-of-life?", "q10"],
+            ["Which best describes how you feel about your life as a whole?", "life7"]
+        ];
+
+        // Question stems shown above grouped items: [from, to, text]
+        const MSQ_STEMS = [
+            [3, 12, "Does your health limit you in these activities? If so, how much?"],
+            [13, 16, "During the past 4 weeks, have you had any of the following problems with your work or other regular daily activities as a result of your physical health?"],
+            [17, 19, "During the past 4 weeks, have you had any of the following problems with your work or other regular daily activities as a result of any emotional problems (such as feeling depressed or anxious)?"],
+            [23, 32, "How much of the time during the past 4 weeks..."],
+            [34, 37, "How TRUE or FALSE is each of the following statements for you?"],
+            [38, 45, "How much of the time during the past 4 weeks..."],
+            [46, 49, "How much of a problem was each of the following for you during the past 4 weeks?"]
+        ];
+
+        const MSQ_SUBS = {
+            PF: { n: "Physical function",            q: [3,4,5,6,7,8,9,10,11,12] },
+            RP: { n: "Role limitations - physical",  q: [13,14,15,16] },
+            RE: { n: "Role limitations - emotional", q: [17,18,19] },
+            PA: { n: "Pain",                         q: [21,22,52] },
+            EW: { n: "Emotional well-being",         q: [24,25,26,28,30] },
+            EN: { n: "Energy",                       q: [23,27,29,31,32] },
+            HP: { n: "Health perceptions",           q: [1,34,35,36,37] },
+            SF: { n: "Social function",              q: [20,33,51] },
+            CF: { n: "Cognitive function",           q: [42,43,44,45] },
+            HD: { n: "Health distress",              q: [38,39,40,41] },
+            QL: { n: "Overall quality of life",      q: [53,54] },
+            SX: { n: "Sexual function",              q: [46,47,48,49] }
+        };
+        const MSQ_PHC = { PF: .17, HP: .17, EN: .12, RP: .12, PA: .11, SX: .08, SF: .12, HD: .11 };
+        const MSQ_MHC = { HD: .14, QL: .18, EW: .29, RE: .24, CF: .15 };
+
+        SCALES_DATA.MSQOL54 = {
+            title: "Multiple Sclerosis Quality of Life (MSQOL-54)",
+            subtitle: "54 items - 12 subscales + 2 composite scores (0-100, higher = better)",
+            type: "msqol54",
+            items: MSQ_ITEMS.map((x, i) => ({ id: "q" + (i + 1), original: x[0], o: x[1] }))
+        };
+
+        const MSQ_SEX_HTML = `
+            <div dir="ltr" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                <p class="font-bold text-slate-800 text-sm">Patient sex (determines the wording of item 47) <span class="text-rose-600">*</span></p>
+                <div class="flex gap-3">
+                    <label class="flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer text-sm"><input type="radio" name="sex" value="M" required onchange="msqSetSex('M')"> Male</label>
+                    <label class="flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer text-sm"><input type="radio" name="sex" value="F" required onchange="msqSetSex('F')"> Female</label>
+                </div>
+            </div>`;
+
+        function msqOpts(key) {
+            const S = MSQ_SETS[key], base = S.zero ? 0 : 1;
+            return S.o.map((o, i) => ({ val: i + base, label: o[0] }));
+        }
+        function msqScore(item, val) {
+            const S = MSQ_SETS[item.o];
+            return S.s[val - (S.zero ? 0 : 1)];
+        }
+        function msqText(item, sex) {
+            if (item.id !== 'q47' || !sex) return item.original;
+            return sex === 'F' ? 'Inadequate lubrication' : 'Difficulty getting or keeping an erection';
+        }
+        function msqSetSex(v) {
+            document.getElementById('msqQ47').textContent = msqText({ id: 'q47' }, v);
+        }
+        function msqTone(item, val) {
+            return severityClasses((100 - msqScore(item, val)) / 100, [{ val: 0 }, { val: 1 }]);
+        }
+
+function msqHeaderHTML(n) {
+            const s = MSQ_STEMS.find(x => x[0] === n);
+            if (!s) return '';
+            return `<div dir="ltr" class="bg-blue-900 text-white px-5 py-4 mt-6 rounded-xl shadow-md border-l-4 border-amber-400">
+                        <p class="font-bold text-base sm:text-lg leading-relaxed">${escapeHTML(s[2])}</p>
+                    </div>`;
+        }
+
+        function msqItemHTML(item, idx) {
+            const n = idx + 1, S = MSQ_SETS[item.o], optional = n >= 46 && n <= 50;
+            const req = optional ? '' : 'required';
+            let body;
+            if (item.o === 'q10') {
+                const faces = { 10: 'grin-beam', 8: 'smile', 6: 'meh', 4: 'meh', 2: 'frown', 0: 'frown-open' };
+                body = `
+                    <div dir="ltr" class="flex justify-between gap-1 pt-1">
+                        ${[10,9,8,7,6,5,4,3,2,1,0].map(v => `
+                        <label class="flex flex-col items-center gap-1 flex-1 p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer text-xs">
+                            <i class="fa-regular fa-face-${faces[v] || 'meh'} text-lg ${faces[v] ? 'text-slate-600' : 'opacity-0'}"></i>
+                            <span class="font-bold">${v}</span>
+                            <input type="radio" name="${item.id}" value="${v}" ${req} class="text-blue-600">
+                        </label>`).join('')}
+                    </div>
+                    <div dir="ltr" class="flex justify-between text-[11px] text-slate-500 px-1">
+                        <span>Best possible quality of life</span>
+                        <span class="text-right">Worst possible (as bad as or worse than being dead)</span>
+                    </div>`;
+            } else {
+                const n6 = S.o.length, cols = n6 <= 3 ? n6 : (n6 === 7 ? 4 : (n6 === 6 ? 3 : n6));
+                body = `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${cols} gap-2 pt-1">
+                        ${S.o.map((o, i) => `
+                        <label class="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer text-xs">
+                            <input type="radio" name="${item.id}" value="${i + (S.zero ? 0 : 1)}" ${req} class="text-blue-600 focus:ring-blue-500">
+                            <span dir="ltr">${escapeHTML(o[0])}</span>
+                        </label>`).join('')}
+                    </div>`;
+            }
+            return `
+                <div class="flex justify-between items-start gap-2">
+                    <p class="font-bold text-slate-800 text-sm" dir="ltr" style="text-align:left"><span class="text-xs text-blue-600 mr-1">${n}.</span><span ${n === 47 ? 'id="msqQ47"' : ''}>${escapeHTML(msqText(item, null))}</span></p>
+                    ${optional ? `<button type="button" onclick="document.querySelectorAll('input[name=${item.id}]').forEach(r => r.checked = false)" class="text-[11px] text-slate-400 hover:text-rose-500 whitespace-nowrap">Optional · clear</button>` : ''}
+                </div>
+                ${body}`;
+        }
+
+        // Missing-data rules: subscale = mean of answered items, scored only if >= 50% answered.
+        // A composite needs all of its subscales; if ONLY sexual function is missing (item 46-49 skipped),
+        // the physical composite is computed with the remaining weights renormalised.
+        function computeMSQOL(responses) {
+            const sc = {};
+            SCALES_DATA.MSQOL54.items.forEach((it, i) => {
+                const v = responses[it.id];
+                sc[i + 1] = Number.isFinite(v) ? msqScore(it, v) : null;
+            });
+            const subs = {};
+            Object.entries(MSQ_SUBS).forEach(([k, d]) => {
+                const a = d.q.map(n => sc[n]).filter(x => x !== null);
+                subs[k] = a.length / d.q.length >= 0.5 ? a.reduce((t, x) => t + x, 0) / a.length : null;
+            });
+            subs.CH = sc[2];
+            subs.SS = sc[50];
+            const comp = w => {
+                let tot = 0, wt = 0;
+                for (const [k, x] of Object.entries(w)) {
+                    if (subs[k] === null) { if (k !== 'SX') return null; continue; }
+                    tot += subs[k] * x; wt += x;
+                }
+                return tot / wt;
+            };
+            return { subs, phc: comp(MSQ_PHC), mhc: comp(MSQ_MHC) };
+        }
+
+        function msqBarsHTML(msq) {
+            const f = x => Number.isFinite(x) ? x.toFixed(1) : '—';
+            const row = (name, x) => `
+                <div>
+                    <div class="flex justify-between text-xs mb-1" dir="ltr"><span class="text-slate-600">${name}</span><span class="font-bold text-slate-800">${f(x)}</span></div>
+                    <div class="h-2 bg-slate-200 rounded-full overflow-hidden" dir="ltr"><div class="h-full bg-blue-500" style="width:${Number.isFinite(x) ? x : 0}%"></div></div>
+                </div>`;
+            return `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                    ${Object.entries(MSQ_SUBS).map(([k, d]) => row(d.n, msq[k])).join('')}
+                    ${row('Change in health (single item)', msq.CH)}
+                    ${row('Satisfaction with sexual function (single item)', msq.SS)}
+                </div>
+                <p class="text-[11px] text-slate-400 mt-3">0 = worst, 100 = best · "—" = not scored (item left blank / under 50% answered)</p>`;
+        }
+
+        function submitMSQOL(patient, config) {
+            const fd = new FormData(document.getElementById('assessmentForm'));
+            const responses = {};
+            config.items.forEach(it => { const v = fd.get(it.id); responses[it.id] = v === null ? null : parseInt(v, 10); });
+            const sex = fd.get('sex');
+            const m = computeMSQOL(responses);
+            const r1 = x => (x === null || x === undefined) ? null : Math.round(x * 10) / 10;
+            const msq = {};
+            Object.keys(m.subs).forEach(k => msq[k] = r1(m.subs[k]));
+            msq.PHC = r1(m.phc);
+            msq.MHC = r1(m.mhc);
+            const f = x => Number.isFinite(x) ? x.toFixed(1) : 'N/A';
+            const scoreResult = {
+                displayScore: `Physical: ${f(msq.PHC)} | Mental: ${f(msq.MHC)}`,
+                numericPrimary: msq.PHC,
+                msq,
+                summary: `Physical composite ${f(msq.PHC)}, Mental composite ${f(msq.MHC)} (0-100, higher = better)`
+            };
+            const record = {
+                id: 'REC_' + Date.now(),
+                timestamp: new Date().toLocaleString('ar-EG'),
+                patient, sex,
+                testKey: 'MSQOL54',
+                testName: config.title,
+                scoreResult,
+                itemResponses: responses
+            };
+            const existing = JSON.parse(localStorage.getItem('clinical_assessments') || '[]');
+            existing.unshift(record);
+            localStorage.setItem('clinical_assessments', JSON.stringify(existing));
+            assessmentDirty = false;
+
+            document.getElementById('resPatient').textContent = patient;
+            document.getElementById('resTest').textContent = config.title;
+            document.getElementById('resScoreContainer').innerHTML = `<div dir="ltr">
+                <div class="grid grid-cols-2 gap-3 text-center mb-4">
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <span class="block text-xs text-blue-600 font-bold">Physical Health Composite</span>
+                        <span class="text-2xl font-black text-blue-900">${f(msq.PHC)}</span>
+                    </div>
+                    <div class="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                        <span class="block text-xs text-purple-600 font-bold">Mental Health Composite</span>
+                        <span class="text-2xl font-black text-purple-900">${f(msq.MHC)}</span>
+                    </div>
+                </div>
+                ${msqBarsHTML(msq)}</div>`;
+            showView('result');
+        }
+
         let activeTestKey = null;
 
         // HAM-D answer options depend on the item type (0-4 or 0-2)
@@ -504,6 +806,7 @@
 
         function getItemOptions(testKey, item) {
             if (testKey === 'HAMD') return HAMD_OPTIONS[item.type];
+            if (testKey === 'MSQOL54') return msqOpts(item.o);
             return SCALES_DATA[testKey].options;
         }
 
@@ -573,12 +876,17 @@
 
             const container = document.getElementById('questionsContainer');
             container.innerHTML = '';
+            if (testKey === 'MSQOL54') container.insertAdjacentHTML('beforeend', MSQ_SEX_HTML);
 
             config.items.forEach((item, index) => {
                 const itemBox = document.createElement('div');
                 itemBox.className = "bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm space-y-3";
 
-                if (testKey === 'MSIS29') {
+                if (testKey === 'MSQOL54') {
+                    container.insertAdjacentHTML('beforeend', msqHeaderHTML(index + 1));
+                    itemBox.dir = 'ltr';
+                    itemBox.innerHTML = msqItemHTML(item, index);
+                } else if (testKey === 'MSIS29') {
                     const headerTag = item.category === 'physical' 
                         ? `<span class="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded">المجال الجسدي Physical</span>` 
                         : `<span class="px-2 py-0.5 bg-purple-50 text-purple-700 text-xs font-semibold rounded">المجال النفسي Psychological</span>`;
@@ -657,6 +965,7 @@
                 return;
             }
             const config = SCALES_DATA[activeTestKey];
+            if (activeTestKey === 'MSQOL54') return submitMSQOL(patient, config);
 
             const formData = new FormData(document.getElementById('assessmentForm'));
             const responses = {};
@@ -871,7 +1180,10 @@
             // --- Score summary (recomputed raw sums shown next to the stored result) ---
             const rawSum = items.reduce((t, it) => t + (Number.isFinite(responses[it.id]) ? responses[it.id] : 0), 0);
             let stats = '';
-            if (r.testKey === 'MSIS29') {
+            if (r.testKey === 'MSQOL54') {
+                const m = r.scoreResult.msq || {}, f = x => Number.isFinite(x) ? x.toFixed(1) : 'N/A';
+                stats = statBox('Physical Health Composite', f(m.PHC), 'blue') + statBox('Mental Health Composite', f(m.MHC), 'purple') + statBox('Sex', r.sex === 'F' ? 'Female' : (r.sex === 'M' ? 'Male' : '—'), 'slate');
+            } else if (r.testKey === 'MSIS29') {
                 const physRaw = items.filter(i => i.category === 'physical').reduce((t, i) => t + (responses[i.id] || 0), 0);
                 const psyRaw = items.filter(i => i.category === 'psychological').reduce((t, i) => t + (responses[i.id] || 0), 0);
                 stats = statBox('المجال الجسدي (0-100)', `${r.scoreResult.physTransformed}%`, 'blue')
@@ -884,6 +1196,8 @@
                       + statBox('المجموع الخام', rawSum, 'slate');
             }
             html += `<div class="grid grid-cols-2 ${r.testKey === 'MSIS29' ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3">${stats}</div>`;
+
+            if (r.testKey === 'MSQOL54' && r.scoreResult.msq) html += `<div class="bg-white border border-slate-200 rounded-xl p-4">${msqBarsHTML(r.scoreResult.msq)}</div>`;
 
             // --- Questionnaire opening heading ---
             if (config && config.intro) {
@@ -902,9 +1216,9 @@
                     const val = responses[item.id];
                     const opt = options.find(o => o.val === val);
                     const answered = opt !== undefined;
-                    const question = item.original || item.text;
+                    const question = r.testKey === 'MSQOL54' ? msqText(item, r.sex) : (item.original || item.text);
                     const badge = answered
-                        ? `<span class="inline-block px-2 py-1 rounded-lg border text-xs font-bold ${severityClasses(val, options)}">${escapeHTML(opt.label)}</span>`
+                        ? `<span class="inline-block px-2 py-1 rounded-lg border text-xs font-bold ${r.testKey === 'MSQOL54' ? msqTone(item, val) : severityClasses(val, options)}">${escapeHTML(opt.label)}</span>`
                         : `<span class="text-xs text-slate-400">لم تتم الإجابة</span>`;
                     const tag = r.testKey === 'MSIS29'
                         ? (item.category === 'physical'
@@ -945,6 +1259,7 @@
             }
 
             document.getElementById('recordModalBody').innerHTML = html;
+            document.getElementById('recordModalBody').dir = r.testKey === 'MSQOL54' ? 'ltr' : '';
             document.getElementById('recordModal').classList.remove('hidden');
             document.getElementById('recordModalBody').scrollTop = 0;
         }
@@ -992,6 +1307,10 @@
                 };
 
                 // Add item-level responses as separate columns
+                if (r.scoreResult && r.scoreResult.msq) {
+                    Object.entries(r.scoreResult.msq).forEach(([k, v]) => { flat[`MSQOL_${k}`] = v; });
+                    if (r.sex) flat.Sex = r.sex;
+                }
                 Object.keys(r.itemResponses).forEach(qKey => {
                     flat[`Item_${qKey}`] = r.itemResponses[qKey];
                 });
